@@ -114,8 +114,25 @@ const selectAlat = (item, alat) => {
 const isSubmitting = ref(false)
 
 const submitForm = async () => {
-  if (form.value.items.some(i => !i.id_alat)) {
-    return addToast('Harap pilih alat dengan benar dari daftar pencarian yang muncul', 'warning')
+  if (!form.value.id_siswa) {
+    return addToast('Pilih Nama Siswa terlebih dahulu.', 'warning')
+  }
+  if (!form.value.id_petugas) {
+    return addToast('Pilih Petugas Jaga terlebih dahulu.', 'warning')
+  }
+  if (!form.value.tgl_batas_kembali) {
+    return addToast('Pilih Tanggal Rencana Kembali.', 'warning')
+  }
+  if (form.value.items.length === 0) {
+    return addToast('Harap tambahkan minimal satu alat untuk dipinjam.', 'warning')
+  }
+  for (const item of form.value.items) {
+    if (!item.id_alat) {
+      return addToast('Harap pilih alat dengan benar dari daftar pencarian yang muncul.', 'warning')
+    }
+    if (!item.jumlah || item.jumlah < 1) {
+      return addToast('Jumlah pinjam alat minimal 1.', 'warning')
+    }
   }
   
   // Validasi stok sebelum submit
@@ -234,7 +251,7 @@ const submitForm = async () => {
               <!-- Pilihan Siswa -->
               <div class="space-y-1">
                 <label class="text-sm font-medium text-gray-700">Nama Siswa</label>
-                <select v-model="form.id_siswa" required :disabled="!selectedKelas" class="w-full border border-gray-300 bg-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all disabled:bg-gray-100 disabled:text-gray-500">
+                <select v-model="form.id_siswa" :disabled="!selectedKelas" class="w-full border border-gray-300 bg-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all disabled:bg-gray-100 disabled:text-gray-500">
                   <option value="" disabled>{{ selectedKelas ? 'Pilih Nama Siswa' : 'Pilih kelas terlebih dahulu' }}</option>
                   <option v-for="siswa in filteredSiswa" :key="siswa.id_siswa" :value="siswa.id_siswa">
                     {{ siswa.nis }} - {{ siswa.nama_siswa }}
@@ -251,7 +268,7 @@ const submitForm = async () => {
 
               <div class="space-y-1">
                 <label class="text-sm font-medium text-gray-700">Petugas Jaga</label>
-                <select v-model="form.id_petugas" required class="w-full border border-gray-300 bg-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" :disabled="dataPetugas.length === 0">
+                <select v-model="form.id_petugas" class="w-full border border-gray-300 bg-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" :disabled="dataPetugas.length === 0">
                   <option value="" disabled>Pilih Petugas</option>
                   <option v-for="petugas in dataPetugas" :key="petugas.id_petugas" :value="petugas.id_petugas">
                     {{ petugas.nama_petugas }}
@@ -264,7 +281,7 @@ const submitForm = async () => {
           <div class="space-y-1">
             <label class="text-sm font-medium text-gray-700">Tanggal Rencana Kembali</label>
             <div class="relative cursor-pointer" @click="openDatePicker">
-              <input type="date" ref="dateInputRef" v-model="form.tgl_batas_kembali" required class="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all cursor-pointer bg-white appearance-none">
+              <input type="date" ref="dateInputRef" v-model="form.tgl_batas_kembali" class="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all cursor-pointer bg-white appearance-none">
               <Calendar class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-500 pointer-events-none" />
             </div>
           </div>
@@ -313,7 +330,7 @@ const submitForm = async () => {
                   </div>
                 </div>
                 <div class="w-24">
-                  <input type="number" min="1" v-model="item.jumlah" required placeholder="Jml" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-center">
+                  <input type="number" min="1" v-model="item.jumlah" placeholder="Jml" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-center">
                 </div>
                 <button type="button" @click="removeItem(index)" :disabled="form.items.length === 1" class="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50">
                   <Trash2 class="w-5 h-5" />
