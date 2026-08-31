@@ -1,6 +1,7 @@
 <script setup>
 import { LayoutDashboard, Users, Wrench, FileText, CheckSquare, LogOut, UserCog } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
+import { supabase } from '../supabase'
 import logoSmk from '../assets/logo smk.png'
 
 const route = useRoute()
@@ -14,9 +15,9 @@ const menuItems = [
   { name: 'Peminjaman', path: '/peminjaman', icon: FileText }
 ]
 
-const handleLogout = () => {
-  // Mock logout, redirect to home
-  router.push('/')
+const handleLogout = async () => {
+  await supabase.auth.signOut()
+  router.push('/admin')
 }
 </script>
 
