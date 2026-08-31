@@ -15,7 +15,7 @@ const routes = [
     component: PeminjamanForm // Directly show PeminjamanForm for students
   },
   {
-    path: '/login',
+    path: '/admin',
     name: 'Login',
     component: Login
   },
