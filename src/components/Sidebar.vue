@@ -1,6 +1,7 @@
 <script setup>
 import { LayoutDashboard, Users, Wrench, FileText, CheckSquare, LogOut, UserCog } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
+import logoSmk from '../assets/logo smk.png'
 
 const route = useRoute()
 const router = useRouter()
@@ -21,11 +22,8 @@ const handleLogout = () => {
 
 <template>
   <aside class="w-64 bg-white border-r border-gray-200 h-screen flex flex-col fixed left-0 top-0">
-    <div class="h-16 flex items-center px-6 border-b border-gray-200">
-      <div class="flex items-center gap-2 text-blue-600 font-bold text-lg">
-        <Wrench class="w-6 h-6" />
-        <span>LabTKJ</span>
-      </div>
+    <div class="flex flex-col items-center justify-center py-6 border-b border-gray-200">
+      <img :src="logoSmk" alt="Logo SMK" class="h-28 w-auto object-contain drop-shadow-sm" />
     </div>
     
     <nav class="flex-1 py-4 px-3 space-y-1 overflow-y-auto">

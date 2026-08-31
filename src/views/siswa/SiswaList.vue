@@ -94,7 +94,11 @@ const deleteSiswa = async (id) => {
   if(confirm('Yakin ingin menghapus data siswa ini?')) {
     const { error } = await supabase.from('siswa').delete().eq('id_siswa', id)
     if (error) {
-      alert('Gagal menghapus data: ' + error.message)
+      if (error.code === '23503') {
+        alert('Gagal menghapus: Siswa ini tidak bisa dihapus karena memiliki Riwayat Peminjaman (walaupun statusnya sudah dikembalikan). Riwayat peminjaman tidak boleh hilang untuk keperluan laporan.')
+      } else {
+        alert('Gagal menghapus data: ' + error.message)
+      }
     } else {
       fetchSiswa()
     }
@@ -228,9 +232,20 @@ const handleImport = (event) => {
             <h1 class="text-2xl font-bold text-gray-900">Data Siswa</h1>
             <p class="text-gray-500 mt-1">Kelola data siswa yang terdaftar di lab</p>
           </div>
-          <button @click="openModal('add')" class="bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-700 hover:to-sky-600 text-white px-4 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 shadow-sm shadow-blue-200">
-            <Plus class="w-5 h-5" /> Tambah Siswa
-          </button>
+          <div class="flex flex-wrap gap-3">
+            <button @click="triggerImport" class="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 shadow-sm">
+              <Upload class="w-5 h-5 text-gray-500" /> Import CSV
+            </button>
+            <input type="file" ref="fileInput" accept=".csv" class="hidden" @change="handleImport">
+            
+            <button @click="exportCSV" class="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 shadow-sm">
+              <Download class="w-5 h-5 text-gray-500" /> Export CSV
+            </button>
+
+            <button @click="openModal('add')" class="bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-700 hover:to-sky-600 text-white px-4 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 shadow-sm shadow-blue-200">
+              <Plus class="w-5 h-5" /> Tambah Siswa
+            </button>
+          </div>
         </div>
 
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col h-full">
@@ -251,16 +266,6 @@ const handleImport = (event) => {
                 <option value="XII TKJ 2">XII TKJ 2</option>
               </select>
               
-              <div class="w-px h-8 bg-gray-200 hidden md:block shrink-0"></div>
-              
-              <button @click="exportCSV" class="shrink-0 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5 shadow-sm" title="Download data sebagai CSV">
-                <Download class="w-4 h-4" /> Export CSV
-              </button>
-              
-              <button @click="triggerImport" class="shrink-0 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5 shadow-sm" title="Upload data dari file CSV">
-                <Upload class="w-4 h-4" /> Import CSV
-              </button>
-              <input type="file" ref="fileInput" accept=".csv" class="hidden" @change="handleImport">
             </div>
           </div>
           

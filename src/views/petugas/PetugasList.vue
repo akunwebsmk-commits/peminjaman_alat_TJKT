@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { Plus, Search, Edit2, Trash2, X } from 'lucide-vue-next'
+import { Plus, Search, Edit2, Trash2, X, Download, Upload } from 'lucide-vue-next'
 import Sidebar from '../../components/Sidebar.vue'
 import Navbar from '../../components/Navbar.vue'
 import { supabase } from '../../supabase'
@@ -10,6 +10,81 @@ const searchQuery = ref('')
 const isModalOpen = ref(false)
 const modalMode = ref('add')
 const isLoading = ref(true)
+const fileInput = ref(null)
+
+const triggerFileInput = () => {
+  if(fileInput.value) fileInput.value.click()
+}
+
+const exportCSV = () => {
+  if (dataPetugas.value.length === 0) {
+    return alert('Tidak ada data untuk di-export')
+  }
+  const headers = ['nip', 'nama_petugas', 'jabatan', 'no_telp']
+  let csvContent = "data:text/csv;charset=utf-8,\n" + headers.join(",") + "\n"
+  
+  dataPetugas.value.forEach(row => {
+    const rowData = headers.map(header => {
+      let cell = row[header] === null || row[header] === undefined ? '' : String(row[header])
+      if (cell.includes(',')) cell = `"${cell}"`
+      return cell
+    })
+    csvContent += rowData.join(",") + "\n"
+  })
+
+  const encodedUri = encodeURI(csvContent)
+  const link = document.createElement("a")
+  link.setAttribute("href", encodedUri)
+  link.setAttribute("download", "data_petugas.csv")
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
+const importCSV = (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  const reader = new FileReader()
+  reader.onload = async (e) => {
+    const text = e.target.result
+    const lines = text.split('\n')
+    const headers = lines[0].trim().split(',')
+
+    const importedData = []
+    for (let i = 1; i < lines.length; i++) {
+      if (!lines[i].trim()) continue
+      // Simple split
+      const currentline = lines[i].split(',')
+      const obj = {}
+      headers.forEach((header, index) => {
+        let val = currentline[index] ? currentline[index].trim() : ''
+        if (val.startsWith('"') && val.endsWith('"')) {
+          val = val.substring(1, val.length - 1)
+        }
+        obj[header.trim()] = val
+      })
+      importedData.push(obj)
+    }
+
+    try {
+      isLoading.value = true
+      const { error } = await supabase.from('petugas').insert(importedData)
+      if (error) {
+        alert('Error import data (pastikan format CSV benar & nip tidak duplikat): ' + error.message)
+      } else {
+        alert(`Berhasil mengimport ${importedData.length} data petugas!`)
+        fetchPetugas()
+      }
+    } catch (err) {
+      alert('Error saat import data: ' + err.message)
+    } finally {
+      isLoading.value = false
+      event.target.value = '' 
+    }
+  }
+  reader.readAsText(file)
+}
 
 const formPetugas = ref({
   id_petugas: null,
@@ -106,9 +181,20 @@ const deletePetugas = async (id) => {
             <h1 class="text-2xl font-bold text-gray-900">Data Petugas</h1>
             <p class="text-gray-500 mt-1">Kelola data petugas dan admin laboratorium</p>
           </div>
-          <button @click="openModal('add')" class="bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-700 hover:to-sky-600 text-white px-4 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 shadow-sm shadow-blue-200">
-            <Plus class="w-5 h-5" /> Tambah Petugas
-          </button>
+          <div class="flex flex-wrap gap-3">
+            <button @click="triggerFileInput" class="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 shadow-sm">
+              <Upload class="w-5 h-5 text-gray-500" /> Import CSV
+            </button>
+            <input type="file" ref="fileInput" accept=".csv" class="hidden" @change="importCSV">
+            
+            <button @click="exportCSV" class="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 shadow-sm">
+              <Download class="w-5 h-5 text-gray-500" /> Export CSV
+            </button>
+
+            <button @click="openModal('add')" class="bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-700 hover:to-sky-600 text-white px-4 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 shadow-sm shadow-blue-200">
+              <Plus class="w-5 h-5" /> Tambah Petugas
+            </button>
+          </div>
         </div>
 
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col h-full">

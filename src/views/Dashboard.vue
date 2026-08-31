@@ -19,8 +19,10 @@ const fetchDashboardData = async () => {
     // 1. Fetch data alat (stok dan tersedia)
     const { data: alatData } = await supabase.from('alat').select('jumlah_stok, jumlah_tersedia')
     if (alatData) {
-      totalAlat.value = alatData.reduce((sum, item) => sum + (item.jumlah_stok || 0), 0)
-      stokTersedia.value = alatData.reduce((sum, item) => sum + (item.jumlah_tersedia || 0), 0)
+      // Mengambil jumlah JENIS alat (berapa baris di tabel)
+      totalAlat.value = alatData.length
+      // Mengambil jumlah JENIS alat yang stok fisiknya masih ada (> 0)
+      stokTersedia.value = alatData.filter(item => (item.jumlah_tersedia || 0) > 0).length
     }
 
     // 2. Fetch data alat yang sedang dipinjam
@@ -103,13 +105,13 @@ onMounted(() => {
         <div v-else>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <StatCard 
-              title="Total Alat"
+              title="Jenis Alat"
               :value="totalAlat"
               :icon="Wrench"
               colorClass="text-blue-600 bg-blue-50"
             />
             <StatCard 
-              title="Stok Tersedia"
+              title="Jenis Tersedia"
               :value="stokTersedia"
               :icon="Package"
               colorClass="text-emerald-600 bg-emerald-50"

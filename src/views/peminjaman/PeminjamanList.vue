@@ -1,3 +1,4 @@
+
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { Search, ExternalLink, CalendarDays } from 'lucide-vue-next'
@@ -36,7 +37,19 @@ const fetchPeminjaman = async () => {
   if (error) {
     console.error('Error fetching peminjaman:', error)
   } else {
-    dataPeminjaman.value = data || []
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    
+    dataPeminjaman.value = (data || []).map(p => {
+      // Jika statusnya dipinjam tapi tanggal hari ini sudah melewati batas kembali, anggap terlambat
+      if (p.status === 'Dipinjam') {
+        const batas = new Date(p.tgl_batas_kembali)
+        if (today > batas) {
+          p.status = 'Terlambat'
+        }
+      }
+      return p
+    })
   }
   isLoading.value = false
 }

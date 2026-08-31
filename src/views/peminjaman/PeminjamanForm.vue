@@ -1,7 +1,19 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { Plus, Trash2, Wrench, AlertCircle } from 'lucide-vue-next'
+import { Plus, Trash2, Wrench, AlertCircle, Calendar } from 'lucide-vue-next'
 import { supabase } from '../../supabase'
+import logoSmk from '../../assets/logo smk.png'
+
+const todayDate = new Date().toISOString().split('T')[0]
+
+const dateInputRef = ref(null)
+const openDatePicker = () => {
+  if (dateInputRef.value && typeof dateInputRef.value.showPicker === 'function') {
+    dateInputRef.value.showPicker()
+  } else if (dateInputRef.value) {
+    dateInputRef.value.focus()
+  }
+}
 
 const form = ref({
   id_siswa: '',
@@ -9,7 +21,7 @@ const form = ref({
   tgl_batas_kembali: '',
   no_telp_aktual: '',
   items: [
-    { id_alat: '', jumlah: 1 }
+    { id_alat: '', jumlah: 1, searchQuery: '', isOpen: false }
   ]
 })
 
@@ -71,18 +83,42 @@ watch(() => form.value.id_siswa, (newId) => {
 })
 
 const addItem = () => {
-  form.value.items.push({ id_alat: '', jumlah: 1 })
+  form.value.items.push({ id_alat: '', jumlah: 1, searchQuery: '', isOpen: false })
 }
 
 const removeItem = (index) => {
   form.value.items.splice(index, 1)
 }
 
+const filteredAlatList = (query) => {
+  if (!query) return dataAlat.value
+  const lowerQ = query.toLowerCase()
+  return dataAlat.value.filter(a => {
+    const nama = a.nama_alat ? a.nama_alat.toLowerCase() : ''
+    const kode = a.kode_alat ? a.kode_alat.toLowerCase() : ''
+    return nama.includes(lowerQ) || kode.includes(lowerQ)
+  })
+}
+
+const selectAlat = (item, alat) => {
+  item.id_alat = alat.id_alat
+  item.searchQuery = alat.nama_alat
+  item.isOpen = false
+}
+
 const isSubmitting = ref(false)
 
 const submitForm = async () => {
   if (form.value.items.some(i => !i.id_alat)) {
-    return alert('Harap pilih alat dengan benar')
+    return alert('Harap pilih alat dengan benar dari daftar pencarian yang muncul')
+  }
+  
+  // Validasi stok sebelum submit
+  for (const item of form.value.items) {
+    const alatTerpilih = dataAlat.value.find(a => a.id_alat === item.id_alat)
+    if (alatTerpilih && item.jumlah > alatTerpilih.jumlah_tersedia) {
+      return alert(`Gagal: Jumlah pinjam "${alatTerpilih.nama_alat}" (${item.jumlah}) melebihi stok tersedia (${alatTerpilih.jumlah_tersedia}).`)
+    }
   }
 
   isSubmitting.value = true
@@ -136,7 +172,7 @@ const submitForm = async () => {
       id_petugas: '',
       tgl_batas_kembali: '',
       no_telp_aktual: '',
-      items: [{ id_alat: '', jumlah: 1 }]
+      items: [{ id_alat: '', jumlah: 1, searchQuery: '', isOpen: false }]
     }
     // Refresh stok alat dan data siswa (kalau ada update no WA)
     fetchData()
@@ -150,14 +186,12 @@ const submitForm = async () => {
   <div class="min-h-screen bg-gray-50 flex items-center justify-center p-4">
     <div class="max-w-3xl w-full bg-white rounded-2xl shadow-xl overflow-hidden">
       <!-- Header -->
-      <div class="bg-gradient-to-r from-blue-600 to-sky-400 px-8 py-6 text-white flex items-center gap-4">
-        <div class="p-3 bg-white/20 backdrop-blur-sm rounded-xl border border-white/10">
-          <Wrench class="w-8 h-8" />
+      <div class="bg-gradient-to-r from-blue-600 to-sky-400 px-8 py-6 text-white flex flex-col items-center justify-center text-center">
+        <div class="p-2 bg-white/20 backdrop-blur-sm rounded-xl border border-white/10 mb-4 inline-block">
+          <img :src="logoSmk" alt="Logo SMK" class="h-16 w-auto object-contain drop-shadow-sm" />
         </div>
-        <div>
-          <h1 class="text-2xl font-bold tracking-tight">Form Peminjaman Alat</h1>
-          <p class="text-blue-50 mt-1 text-sm font-medium">Laboratorium Teknik Komputer dan Jaringan</p>
-        </div>
+        <h1 class="text-2xl font-bold tracking-tight">Form Peminjaman Alat</h1>
+        <p class="text-blue-50 mt-1 text-sm font-medium">Laboratorium Teknik Komputer dan Jaringan</p>
       </div>
 
       <!-- Warning if no petugas -->
@@ -224,7 +258,10 @@ const submitForm = async () => {
 
           <div class="space-y-1">
             <label class="text-sm font-medium text-gray-700">Tanggal Rencana Kembali</label>
-            <input type="date" v-model="form.tgl_batas_kembali" required class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+            <div class="relative cursor-pointer" @click="openDatePicker">
+              <input type="date" ref="dateInputRef" v-model="form.tgl_batas_kembali" required class="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all cursor-pointer bg-white appearance-none">
+              <Calendar class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-500 pointer-events-none" />
+            </div>
           </div>
 
           <div class="border-t border-gray-200 pt-6 mt-6">
@@ -237,16 +274,41 @@ const submitForm = async () => {
 
             <div class="space-y-3">
               <div v-for="(item, index) in form.items" :key="index" class="flex items-start gap-3">
-                <div class="flex-1">
-                  <select v-model="item.id_alat" required class="w-full border border-gray-300 bg-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
-                    <option value="" disabled>Pilih Alat</option>
-                    <option v-for="alat in dataAlat" :key="alat.id_alat" :value="alat.id_alat">
-                      {{ alat.nama_alat }} (Tersedia: {{ alat.jumlah_tersedia }})
-                    </option>
-                  </select>
+                <div class="relative flex-1">
+                  <!-- Searchable Input -->
+                  <div class="relative">
+                    <input 
+                      type="text" 
+                      v-model="item.searchQuery"
+                      @focus="item.isOpen = true"
+                      @blur="item.isOpen = false"
+                      @input="item.id_alat = ''"
+                      placeholder="Ketik nama atau kode alat..." 
+                      class="w-full border border-gray-300 bg-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                      :class="{'border-red-400': !item.id_alat && item.searchQuery}"
+                    >
+                    <!-- Dropdown List -->
+                    <div v-if="item.isOpen" class="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                      <div v-if="filteredAlatList(item.searchQuery).length === 0" class="px-4 py-3 text-sm text-gray-500 text-center bg-gray-50">
+                        Alat tidak ditemukan
+                      </div>
+                      <div 
+                        v-for="alat in filteredAlatList(item.searchQuery)" 
+                        :key="alat.id_alat"
+                        @mousedown.prevent="selectAlat(item, alat)"
+                        class="px-4 py-2.5 hover:bg-blue-50 cursor-pointer text-sm flex justify-between items-center border-b border-gray-50 last:border-0"
+                      >
+                        <div>
+                          <p class="font-medium text-gray-800">{{ alat.nama_alat }}</p>
+                          <p class="text-[10px] text-gray-500">{{ alat.kode_alat }}</p>
+                        </div>
+                        <span class="text-xs text-emerald-600 font-bold bg-emerald-50 px-2 py-1 rounded-md">Stok: {{ alat.jumlah_tersedia }}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <div class="w-24">
-                  <input type="number" min="1" v-model="item.jumlah" required placeholder="Jml" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-center">
+                  <input type="number" min="1" :max="dataAlat.find(a => a.id_alat === item.id_alat)?.jumlah_tersedia || 1" v-model="item.jumlah" required placeholder="Jml" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-center">
                 </div>
                 <button type="button" @click="removeItem(index)" :disabled="form.items.length === 1" class="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50">
                   <Trash2 class="w-5 h-5" />

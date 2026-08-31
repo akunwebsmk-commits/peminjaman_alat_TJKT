@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ArrowLeft, CheckCircle2 } from 'lucide-vue-next'
 import Sidebar from '../../components/Sidebar.vue'
@@ -75,17 +75,23 @@ const kalkulasi = computed(() => {
   
   // Menghitung selisih hari
   const diffTime = aktual - batas
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  
+  // Batasi maksimal telat (misal 365 hari) agar tidak terjadi numeric overflow di database jika tanggal ngaco
+  if (diffDays > 365) diffDays = 365
   
   const telatHari = diffDays > 0 ? diffDays : 0
   const totalDenda = telatHari * DENDA_PER_HARI
 
-  if (telatHari > 0 && formPengembalian.value.status_denda === 'Tidak Ada Denda') {
-    // Auto set default denda status if overdue
-    formPengembalian.value.status_denda = 'Belum Lunas'
-  }
-
   return { telatHari, totalDenda }
+})
+
+watch(() => kalkulasi.value.telatHari, (newTelat) => {
+  if (newTelat > 0 && formPengembalian.value.status_denda === 'Tidak Ada Denda') {
+    formPengembalian.value.status_denda = 'Belum Lunas'
+  } else if (newTelat === 0) {
+    formPengembalian.value.status_denda = 'Tidak Ada Denda'
+  }
 })
 
 const isSubmitting = ref(false)
