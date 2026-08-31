@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { supabase } from '../supabase'
 
 import Dashboard from '../views/Dashboard.vue'
 import Login from '../views/Login.vue'
@@ -23,38 +24,60 @@ const routes = [
   {
     path: '/dashboard',
     name: 'Dashboard',
-    component: Dashboard
+    component: Dashboard,
+    meta: { requiresAuth: true }
   },
   {
     path: '/siswa',
     name: 'SiswaList',
-    component: SiswaList
+    component: SiswaList,
+    meta: { requiresAuth: true }
   },
   {
     path: '/petugas',
     name: 'PetugasList',
-    component: PetugasList
+    component: PetugasList,
+    meta: { requiresAuth: true }
   },
   {
     path: '/alat',
     name: 'AlatList',
-    component: AlatList
+    component: AlatList,
+    meta: { requiresAuth: true }
   },
   {
     path: '/peminjaman',
     name: 'PeminjamanList',
-    component: PeminjamanList
+    component: PeminjamanList,
+    meta: { requiresAuth: true }
   },
   {
     path: '/pengembalian/:id',
     name: 'PengembalianForm',
-    component: PengembalianForm
+    component: PengembalianForm,
+    meta: { requiresAuth: true }
   }
 ]
 
 const router = createRouter({
   history: createWebHistory(),
   routes
+})
+
+router.beforeEach(async (to, from, next) => {
+  const { data: { session } } = await supabase.auth.getSession()
+
+  // Redirect ke /admin jika route butuh auth dan user belum login
+  if (to.meta.requiresAuth && !session) {
+    next('/admin')
+  } 
+  // Redirect ke /dashboard jika user sudah login tapi mencoba akses halaman login
+  else if (to.path === '/admin' && session) {
+    next('/dashboard')
+  } 
+  else {
+    next()
+  }
 })
 
 export default router
