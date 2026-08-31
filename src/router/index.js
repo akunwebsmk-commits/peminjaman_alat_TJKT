@@ -7,6 +7,7 @@ import PeminjamanForm from '../views/peminjaman/PeminjamanForm.vue'
 import PeminjamanList from '../views/peminjaman/PeminjamanList.vue'
 import PengembalianForm from '../views/pengembalian/PengembalianForm.vue'
 import SiswaList from '../views/siswa/SiswaList.vue'
+import PetugasList from '../views/petugas/PetugasList.vue'
 
 const routes = [
   {
@@ -28,6 +29,11 @@ const routes = [
     path: '/siswa',
     name: 'SiswaList',
     component: SiswaList
+  },
+  {
+    path: '/petugas',
+    name: 'PetugasList',
+    component: PetugasList
   },
   {
     path: '/alat',

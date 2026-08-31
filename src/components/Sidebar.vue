@@ -1,5 +1,5 @@
 <script setup>
-import { LayoutDashboard, Users, Wrench, FileText, CheckSquare, LogOut } from 'lucide-vue-next'
+import { LayoutDashboard, Users, Wrench, FileText, CheckSquare, LogOut, UserCog } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
@@ -8,6 +8,7 @@ const router = useRouter()
 const menuItems = [
   { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   { name: 'Data Siswa', path: '/siswa', icon: Users },
+  { name: 'Data Petugas', path: '/petugas', icon: UserCog },
   { name: 'Inventaris Alat', path: '/alat', icon: Wrench },
   { name: 'Peminjaman', path: '/peminjaman', icon: FileText }
 ]
