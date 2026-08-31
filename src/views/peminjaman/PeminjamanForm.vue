@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { Plus, Trash2, Wrench, AlertCircle } from 'lucide-vue-next'
 import { supabase } from '../../supabase'
 
@@ -7,11 +7,13 @@ const form = ref({
   id_siswa: '',
   id_petugas: '',
   tgl_batas_kembali: '',
+  no_telp_aktual: '',
   items: [
     { id_alat: '', jumlah: 1 }
   ]
 })
 
+const selectedKelas = ref('')
 const dataSiswa = ref([])
 const dataAlat = ref([])
 const dataPetugas = ref([])
@@ -22,7 +24,7 @@ const fetchData = async () => {
   
   // Fetch parallel to save time
   const [resSiswa, resAlat, resPetugas] = await Promise.all([
-    supabase.from('siswa').select('id_siswa, nis, nama_siswa, kelas').order('nama_siswa'),
+    supabase.from('siswa').select('id_siswa, nis, nama_siswa, kelas, no_telp').order('nama_siswa'),
     supabase.from('alat').select('id_alat, nama_alat, jumlah_tersedia').gt('jumlah_tersedia', 0).order('nama_alat'),
     supabase.from('petugas').select('id_petugas, nama_petugas').order('nama_petugas')
   ])
@@ -36,6 +38,36 @@ const fetchData = async () => {
 
 onMounted(() => {
   fetchData()
+})
+
+// Dapatkan daftar kelas yang unik dari data siswa
+const daftarKelas = computed(() => {
+  const kelasSet = new Set(dataSiswa.value.map(s => s.kelas))
+  return Array.from(kelasSet).sort()
+})
+
+// Filter siswa berdasarkan kelas yang dipilih
+const filteredSiswa = computed(() => {
+  if (!selectedKelas.value) return []
+  return dataSiswa.value.filter(s => s.kelas === selectedKelas.value)
+})
+
+// Reset nama siswa saat kelas diganti
+watch(selectedKelas, () => {
+  form.value.id_siswa = ''
+  form.value.no_telp_aktual = ''
+})
+
+// Auto-fill nomor WA saat nama siswa dipilih
+watch(() => form.value.id_siswa, (newId) => {
+  if (newId) {
+    const student = dataSiswa.value.find(s => s.id_siswa === newId)
+    if (student) {
+      form.value.no_telp_aktual = student.no_telp || ''
+    }
+  } else {
+    form.value.no_telp_aktual = ''
+  }
 })
 
 const addItem = () => {
@@ -55,7 +87,15 @@ const submitForm = async () => {
 
   isSubmitting.value = true
 
-  // 1. Buat Peminjaman Induk
+  // 1. Update kontak siswa (No. WA) jika diisi/berubah di form ini
+  if (form.value.id_siswa && form.value.no_telp_aktual) {
+    await supabase
+      .from('siswa')
+      .update({ no_telp: form.value.no_telp_aktual })
+      .eq('id_siswa', form.value.id_siswa)
+  }
+
+  // 2. Buat Peminjaman Induk
   const { data: pinjamData, error: pinjamError } = await supabase
     .from('peminjaman')
     .insert([{
@@ -73,7 +113,7 @@ const submitForm = async () => {
     return
   }
 
-  // 2. Buat Detail Peminjaman (Bulk Insert)
+  // 3. Buat Detail Peminjaman (Bulk Insert)
   const detailPayload = form.value.items.map(item => ({
     id_pinjam: pinjamData.id_pinjam,
     id_alat: item.id_alat,
@@ -90,13 +130,15 @@ const submitForm = async () => {
   } else {
     alert('Form peminjaman berhasil disubmit!')
     // Reset form
+    selectedKelas.value = ''
     form.value = {
       id_siswa: '',
       id_petugas: '',
       tgl_batas_kembali: '',
+      no_telp_aktual: '',
       items: [{ id_alat: '', jumlah: 1 }]
     }
-    // Refresh stok alat (akan berkurang otomatis via Trigger)
+    // Refresh stok alat dan data siswa (kalau ada update no WA)
     fetchData()
   }
 
@@ -106,7 +148,7 @@ const submitForm = async () => {
 
 <template>
   <div class="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-    <div class="max-w-2xl w-full bg-white rounded-2xl shadow-xl overflow-hidden">
+    <div class="max-w-3xl w-full bg-white rounded-2xl shadow-xl overflow-hidden">
       <!-- Header -->
       <div class="bg-gradient-to-r from-blue-600 to-sky-400 px-8 py-6 text-white flex items-center gap-4">
         <div class="p-3 bg-white/20 backdrop-blur-sm rounded-xl border border-white/10">
@@ -135,25 +177,48 @@ const submitForm = async () => {
         
         <form @submit.prevent="submitForm" class="space-y-6">
           
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="space-y-1">
-              <label class="text-sm font-medium text-gray-700">Nama Siswa</label>
-              <select v-model="form.id_siswa" required class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
-                <option value="" disabled>Pilih Siswa</option>
-                <option v-for="siswa in dataSiswa" :key="siswa.id_siswa" :value="siswa.id_siswa">
-                  {{ siswa.nis }} - {{ siswa.nama_siswa }} ({{ siswa.kelas }})
-                </option>
-              </select>
-            </div>
+          <div class="bg-blue-50/50 p-5 rounded-xl border border-blue-100 mb-6">
+            <h3 class="text-sm font-semibold text-blue-800 mb-4">Informasi Peminjam</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              
+              <!-- Filter Kelas (New) -->
+              <div class="space-y-1">
+                <label class="text-sm font-medium text-gray-700">Pilih Kelas</label>
+                <select v-model="selectedKelas" class="w-full border border-gray-300 bg-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                  <option value="">-- Pilih Kelas Dahulu --</option>
+                  <option v-for="kelas in daftarKelas" :key="kelas" :value="kelas">
+                    {{ kelas }}
+                  </option>
+                </select>
+              </div>
 
-            <div class="space-y-1">
-              <label class="text-sm font-medium text-gray-700">Petugas Jaga</label>
-              <select v-model="form.id_petugas" required class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" :disabled="dataPetugas.length === 0">
-                <option value="" disabled>Pilih Petugas</option>
-                <option v-for="petugas in dataPetugas" :key="petugas.id_petugas" :value="petugas.id_petugas">
-                  {{ petugas.nama_petugas }}
-                </option>
-              </select>
+              <!-- Pilihan Siswa -->
+              <div class="space-y-1">
+                <label class="text-sm font-medium text-gray-700">Nama Siswa</label>
+                <select v-model="form.id_siswa" required :disabled="!selectedKelas" class="w-full border border-gray-300 bg-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all disabled:bg-gray-100 disabled:text-gray-500">
+                  <option value="" disabled>{{ selectedKelas ? 'Pilih Nama Siswa' : 'Pilih kelas terlebih dahulu' }}</option>
+                  <option v-for="siswa in filteredSiswa" :key="siswa.id_siswa" :value="siswa.id_siswa">
+                    {{ siswa.nis }} - {{ siswa.nama_siswa }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- Input Kontak / No. Telp (New) -->
+              <div class="space-y-1">
+                <label class="text-sm font-medium text-gray-700">No. WhatsApp</label>
+                <input type="text" v-model="form.no_telp_aktual" :disabled="!form.id_siswa" placeholder="Contoh: 628123456789" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all disabled:bg-gray-100 disabled:text-gray-500">
+                <p class="text-[11px] text-gray-500 mt-1">Bisa diisi/diperbarui jika kosong.</p>
+              </div>
+
+              <div class="space-y-1">
+                <label class="text-sm font-medium text-gray-700">Petugas Jaga</label>
+                <select v-model="form.id_petugas" required class="w-full border border-gray-300 bg-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" :disabled="dataPetugas.length === 0">
+                  <option value="" disabled>Pilih Petugas</option>
+                  <option v-for="petugas in dataPetugas" :key="petugas.id_petugas" :value="petugas.id_petugas">
+                    {{ petugas.nama_petugas }}
+                  </option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -173,7 +238,7 @@ const submitForm = async () => {
             <div class="space-y-3">
               <div v-for="(item, index) in form.items" :key="index" class="flex items-start gap-3">
                 <div class="flex-1">
-                  <select v-model="item.id_alat" required class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                  <select v-model="item.id_alat" required class="w-full border border-gray-300 bg-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
                     <option value="" disabled>Pilih Alat</option>
                     <option v-for="alat in dataAlat" :key="alat.id_alat" :value="alat.id_alat">
                       {{ alat.nama_alat }} (Tersedia: {{ alat.jumlah_tersedia }})
@@ -190,7 +255,7 @@ const submitForm = async () => {
             </div>
           </div>
 
-          <div class="pt-6">
+          <div class="pt-6 border-t border-gray-200 mt-6">
             <button type="submit" :disabled="isSubmitting || dataPetugas.length === 0" class="w-full bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-700 hover:to-sky-600 disabled:from-gray-400 disabled:to-gray-400 text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-[0.98]">
               {{ isSubmitting ? 'Memproses...' : 'Ajukan Peminjaman' }}
             </button>
