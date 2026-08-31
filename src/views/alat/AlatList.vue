@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { Plus, Search, Edit2, Trash2, X, AlertCircle, CheckCircle2, Download, Upload } from 'lucide-vue-next'
 import Sidebar from '../../components/Sidebar.vue'
 import Navbar from '../../components/Navbar.vue'
+import ConfirmModal from '../../components/ConfirmModal.vue'
 import { supabase } from '../../supabase'
 import { useToast } from '../../composables/useToast'
 
@@ -14,6 +15,9 @@ const filterKondisi = ref('')
 const isModalOpen = ref(false)
 const modalMode = ref('add') 
 const isLoading = ref(true)
+
+const showConfirmDelete = ref(false)
+const itemToDelete = ref(null)
 
 const fileInput = ref(null)
 
@@ -104,15 +108,23 @@ const submitForm = async () => {
   fetchAlat()
 }
 
-const deleteAlat = async (id) => {
-  if(confirm('Yakin ingin menghapus data alat ini?')) {
-    const { error } = await supabase.from('alat').delete().eq('id_alat', id)
-    if (error) {
-      addToast('Gagal menghapus data: ' + error.message, 'error')
-    } else {
-      addToast('Data alat berhasil dihapus!', 'success')
-      fetchAlat()
-    }
+const confirmDelete = (id) => {
+  itemToDelete.value = id
+  showConfirmDelete.value = true
+}
+
+const executeDelete = async () => {
+  const id = itemToDelete.value
+  if (!id) return
+  
+  showConfirmDelete.value = false
+  
+  const { error } = await supabase.from('alat').delete().eq('id_alat', id)
+  if (error) {
+    addToast('Gagal menghapus data: ' + error.message, 'error')
+  } else {
+    addToast('Data alat berhasil dihapus!', 'success')
+    fetchAlat()
   }
 }
 
@@ -318,7 +330,7 @@ const handleImport = (event) => {
                       <button @click="openModal('edit', alat)" class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                         <Edit2 class="w-4 h-4" />
                       </button>
-                      <button @click="deleteAlat(alat.id_alat)" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                      <button @click="confirmDelete(alat.id_alat)" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                         <Trash2 class="w-4 h-4" />
                       </button>
                     </div>
@@ -379,5 +391,14 @@ const handleImport = (event) => {
         </div>
       </div>
     </div>
+    
+    <!-- Confirm Delete Modal -->
+    <ConfirmModal 
+      :is-open="showConfirmDelete"
+      title="Hapus Data Alat"
+      message="Yakin ingin menghapus data alat ini? Tindakan ini tidak dapat dibatalkan."
+      @confirm="executeDelete"
+      @cancel="showConfirmDelete = false"
+    />
   </div>
 </template>

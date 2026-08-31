@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { Plus, Search, Edit2, Trash2, X, Download, Upload } from 'lucide-vue-next'
 import Sidebar from '../../components/Sidebar.vue'
 import Navbar from '../../components/Navbar.vue'
+import ConfirmModal from '../../components/ConfirmModal.vue'
 import { supabase } from '../../supabase'
 import { useToast } from '../../composables/useToast'
 
@@ -14,6 +15,9 @@ const filterKelas = ref('')
 const isModalOpen = ref(false)
 const modalMode = ref('add') // 'add' or 'edit'
 const isLoading = ref(true)
+
+const showConfirmDelete = ref(false)
+const itemToDelete = ref(null)
 
 const fileInput = ref(null)
 
@@ -95,19 +99,27 @@ const submitForm = async () => {
   fetchSiswa()
 }
 
-const deleteSiswa = async (id) => {
-  if(confirm('Yakin ingin menghapus data siswa ini?')) {
-    const { error } = await supabase.from('siswa').delete().eq('id_siswa', id)
-    if (error) {
-      if (error.code === '23503') {
-        addToast('Gagal menghapus: Siswa memiliki riwayat peminjaman.', 'error')
-      } else {
-        addToast('Gagal menghapus data: ' + error.message, 'error')
-      }
+const confirmDelete = (id) => {
+  itemToDelete.value = id
+  showConfirmDelete.value = true
+}
+
+const executeDelete = async () => {
+  const id = itemToDelete.value
+  if (!id) return
+  
+  showConfirmDelete.value = false
+  
+  const { error } = await supabase.from('siswa').delete().eq('id_siswa', id)
+  if (error) {
+    if (error.code === '23503') {
+      addToast('Gagal menghapus: Siswa memiliki riwayat peminjaman.', 'error')
     } else {
-      addToast('Data siswa berhasil dihapus!', 'success')
-      fetchSiswa()
+      addToast('Gagal menghapus data: ' + error.message, 'error')
     }
+  } else {
+    addToast('Data siswa berhasil dihapus!', 'success')
+    fetchSiswa()
   }
 }
 
@@ -302,7 +314,7 @@ const handleImport = (event) => {
                       <button @click="openModal('edit', siswa)" class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                         <Edit2 class="w-4 h-4" />
                       </button>
-                      <button @click="deleteSiswa(siswa.id_siswa)" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                      <button @click="confirmDelete(siswa.id_siswa)" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                         <Trash2 class="w-4 h-4" />
                       </button>
                     </div>
@@ -364,5 +376,14 @@ const handleImport = (event) => {
         </div>
       </div>
     </div>
+    
+    <!-- Confirm Delete Modal -->
+    <ConfirmModal 
+      :is-open="showConfirmDelete"
+      title="Hapus Data Siswa"
+      message="Yakin ingin menghapus data siswa ini? Tindakan ini tidak dapat dibatalkan."
+      @confirm="executeDelete"
+      @cancel="showConfirmDelete = false"
+    />
   </div>
 </template>

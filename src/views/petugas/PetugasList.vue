@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { Plus, Search, Edit2, Trash2, X, Download, Upload } from 'lucide-vue-next'
 import Sidebar from '../../components/Sidebar.vue'
 import Navbar from '../../components/Navbar.vue'
+import ConfirmModal from '../../components/ConfirmModal.vue'
 import { supabase } from '../../supabase'
 import { useToast } from '../../composables/useToast'
 
@@ -14,6 +15,9 @@ const isModalOpen = ref(false)
 const modalMode = ref('add')
 const isLoading = ref(true)
 const fileInput = ref(null)
+
+const showConfirmDelete = ref(false)
+const itemToDelete = ref(null)
 
 const triggerFileInput = () => {
   if(fileInput.value) fileInput.value.click()
@@ -163,15 +167,23 @@ const submitForm = async () => {
   fetchPetugas()
 }
 
-const deletePetugas = async (id) => {
-  if(confirm('Yakin ingin menghapus data petugas ini?')) {
-    const { error } = await supabase.from('petugas').delete().eq('id_petugas', id)
-    if (error) {
-      addToast('Gagal menghapus data: (Mungkin petugas ini sedang terikat dengan data peminjaman) ' + error.message, 'error')
-    } else {
-      addToast('Data petugas berhasil dihapus!', 'success')
-      fetchPetugas()
-    }
+const confirmDelete = (id) => {
+  itemToDelete.value = id
+  showConfirmDelete.value = true
+}
+
+const executeDelete = async () => {
+  const id = itemToDelete.value
+  if (!id) return
+  
+  showConfirmDelete.value = false
+  
+  const { error } = await supabase.from('petugas').delete().eq('id_petugas', id)
+  if (error) {
+    addToast('Gagal menghapus data: (Mungkin petugas ini sedang terikat dengan data peminjaman) ' + error.message, 'error')
+  } else {
+    addToast('Data petugas berhasil dihapus!', 'success')
+    fetchPetugas()
   }
 }
 </script>
@@ -239,7 +251,7 @@ const deletePetugas = async (id) => {
                       <button @click="openModal('edit', petugas)" class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                         <Edit2 class="w-4 h-4" />
                       </button>
-                      <button @click="deletePetugas(petugas.id_petugas)" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                      <button @click="confirmDelete(petugas.id_petugas)" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                         <Trash2 class="w-4 h-4" />
                       </button>
                     </div>
@@ -290,5 +302,14 @@ const deletePetugas = async (id) => {
         </div>
       </div>
     </div>
+    
+    <!-- Confirm Delete Modal -->
+    <ConfirmModal 
+      :is-open="showConfirmDelete"
+      title="Hapus Data Petugas"
+      message="Yakin ingin menghapus data petugas ini? Tindakan ini tidak dapat dibatalkan."
+      @confirm="executeDelete"
+      @cancel="showConfirmDelete = false"
+    />
   </div>
 </template>
