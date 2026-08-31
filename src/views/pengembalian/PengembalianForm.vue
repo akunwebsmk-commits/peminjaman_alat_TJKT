@@ -5,6 +5,9 @@ import { ArrowLeft, CheckCircle2 } from 'lucide-vue-next'
 import Sidebar from '../../components/Sidebar.vue'
 import Navbar from '../../components/Navbar.vue'
 import { supabase } from '../../supabase'
+import { useToast } from '../../composables/useToast'
+
+const { addToast } = useToast()
 
 const router = useRouter()
 const route = useRoute()
@@ -41,13 +44,13 @@ const fetchDetail = async () => {
     .single()
 
   if (error) {
-    alert('Gagal mengambil data peminjaman: ' + error.message)
+    addToast('Gagal mengambil data peminjaman: ' + error.message, 'error')
     router.push('/peminjaman')
     return
   }
   
   if (data.status === 'Dikembalikan') {
-    alert('Peminjaman ini sudah diselesaikan!')
+    addToast('Peminjaman ini sudah diselesaikan!', 'info')
     router.push('/peminjaman')
     return
   }
@@ -109,7 +112,7 @@ const submitForm = async () => {
   }])
 
   if (kembaliError) {
-    alert('Gagal memproses pengembalian: ' + kembaliError.message)
+    addToast('Gagal memproses pengembalian: ' + kembaliError.message, 'error')
     isSubmitting.value = false
     return
   }
@@ -126,7 +129,7 @@ const submitForm = async () => {
   await Promise.all(updatePromises)
   // trigger_kembalikan_stok akan otomatis mengubah status peminjaman jadi Dikembalikan dan update stok
 
-  alert('Pengembalian berhasil diproses!')
+  addToast('Pengembalian berhasil diproses!', 'success')
   router.push('/peminjaman')
 }
 </script>

@@ -4,6 +4,9 @@ import { Plus, Search, Edit2, Trash2, X, AlertCircle, CheckCircle2, Download, Up
 import Sidebar from '../../components/Sidebar.vue'
 import Navbar from '../../components/Navbar.vue'
 import { supabase } from '../../supabase'
+import { useToast } from '../../composables/useToast'
+
+const { addToast } = useToast()
 
 const dataAlat = ref([])
 const searchQuery = ref('')
@@ -78,9 +81,10 @@ const submitForm = async () => {
     
     const { error } = await supabase.from('alat').insert([insertData])
     if (error) {
-      alert('Gagal menambahkan data: ' + error.message)
+      addToast('Gagal menambahkan data: ' + error.message, 'error')
       return
     }
+    addToast('Data alat berhasil ditambahkan!', 'success')
   } else {
     const { id_alat, ...updateData } = formAlat.value
     // Menyesuaikan jumlah_tersedia jika stok berubah
@@ -104,8 +108,9 @@ const deleteAlat = async (id) => {
   if(confirm('Yakin ingin menghapus data alat ini?')) {
     const { error } = await supabase.from('alat').delete().eq('id_alat', id)
     if (error) {
-      alert('Gagal menghapus data: ' + error.message)
+      addToast('Gagal menghapus data: ' + error.message, 'error')
     } else {
+      addToast('Data alat berhasil dihapus!', 'success')
       fetchAlat()
     }
   }
@@ -114,7 +119,7 @@ const deleteAlat = async (id) => {
 // === CSV EXPORT & IMPORT ===
 
 const exportCSV = () => {
-  if (dataAlat.value.length === 0) return alert('Tidak ada data untuk diexport.')
+  if (dataAlat.value.length === 0) return addToast('Tidak ada data untuk diexport.', 'warning')
   
   const headers = ['kode_alat', 'nama_alat', 'jumlah_stok', 'kondisi', 'keterangan']
   const rows = dataAlat.value.map(a => {
@@ -148,14 +153,14 @@ const handleImport = (event) => {
     try {
       const text = e.target.result
       const lines = text.split('\n').filter(line => line.trim() !== '')
-      if (lines.length <= 1) return alert('File CSV kosong atau hanya berisi header.')
+      if (lines.length <= 1) return addToast('File CSV kosong atau hanya berisi header.', 'error')
 
       const headers = lines[0].toLowerCase().split(',').map(h => h.trim().replace(/^"|"$/g, ''))
       const expectedHeaders = ['kode_alat', 'nama_alat', 'jumlah_stok', 'kondisi', 'keterangan']
       
       const isHeaderValid = expectedHeaders.every(h => headers.includes(h))
       if (!isHeaderValid) {
-        return alert('Format header CSV tidak valid. Pastikan baris pertama adalah: kode_alat, nama_alat, jumlah_stok, kondisi, keterangan')
+        return addToast('Format header CSV tidak valid.', 'error')
       }
 
       const payload = []
@@ -198,23 +203,23 @@ const handleImport = (event) => {
         }
       }
 
-      if (payload.length === 0) return alert('Tidak ada baris data alat (berisi Kode & Nama) yang ditemukan di file.')
+      if (payload.length === 0) return addToast('Tidak ada baris data alat yang ditemukan.', 'error')
 
       isLoading.value = true
       const { error } = await supabase.from('alat').insert(payload)
       
       if (error) {
         if (error.code === '23505') {
-          alert('Gagal mengimpor: Ada Kode Alat yang sudah terdaftar (Duplikat).')
+          addToast('Gagal mengimpor: Ada Kode Alat yang sudah terdaftar (Duplikat).', 'error')
         } else {
-          alert('Gagal mengimpor data: ' + error.message)
+          addToast('Gagal mengimpor data: ' + error.message, 'error')
         }
       } else {
-        alert(`Berhasil mengimpor ${payload.length} data alat!`)
+        addToast(`Berhasil mengimpor ${payload.length} data alat!`, 'success')
         fetchAlat()
       }
     } catch (err) {
-      alert('Terjadi kesalahan saat memproses file CSV.')
+      addToast('Terjadi kesalahan saat memproses file CSV.', 'error')
       console.error(err)
     } finally {
       isLoading.value = false

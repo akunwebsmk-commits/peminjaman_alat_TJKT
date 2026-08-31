@@ -1,7 +1,12 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { Plus, Trash2, Wrench, AlertCircle, Calendar } from 'lucide-vue-next'
+import Sidebar from '../../components/Sidebar.vue'
+import Navbar from '../../components/Navbar.vue'
 import { supabase } from '../../supabase'
+import { useToast } from '../../composables/useToast'
+
+const { addToast } = useToast()
 import logoSmk from '../../assets/logo smk.png'
 
 const todayDate = new Date().toISOString().split('T')[0]
@@ -110,14 +115,14 @@ const isSubmitting = ref(false)
 
 const submitForm = async () => {
   if (form.value.items.some(i => !i.id_alat)) {
-    return alert('Harap pilih alat dengan benar dari daftar pencarian yang muncul')
+    return addToast('Harap pilih alat dengan benar dari daftar pencarian yang muncul', 'warning')
   }
   
   // Validasi stok sebelum submit
   for (const item of form.value.items) {
     const alatTerpilih = dataAlat.value.find(a => a.id_alat === item.id_alat)
     if (alatTerpilih && item.jumlah > alatTerpilih.jumlah_tersedia) {
-      return alert(`Gagal: Jumlah pinjam "${alatTerpilih.nama_alat}" (${item.jumlah}) melebihi stok tersedia (${alatTerpilih.jumlah_tersedia}).`)
+      return addToast(`Gagal: Jumlah pinjam "${alatTerpilih.nama_alat}" (${item.jumlah}) melebihi stok tersedia (${alatTerpilih.jumlah_tersedia}).`, 'error')
     }
   }
 
@@ -144,7 +149,7 @@ const submitForm = async () => {
     .single()
 
   if (pinjamError) {
-    alert('Gagal membuat peminjaman: ' + pinjamError.message)
+    addToast('Gagal membuat peminjaman: ' + pinjamError.message, 'error')
     isSubmitting.value = false
     return
   }
@@ -162,9 +167,9 @@ const submitForm = async () => {
     .insert(detailPayload)
 
   if (detailError) {
-    alert('Peminjaman terbuat, tapi gagal menyimpan detail alat: ' + detailError.message)
+    addToast('Peminjaman terbuat, tapi gagal menyimpan detail alat: ' + detailError.message, 'error')
   } else {
-    alert('Form peminjaman berhasil disubmit!')
+    addToast('Form peminjaman berhasil disubmit!', 'success')
     // Reset form
     selectedKelas.value = ''
     form.value = {

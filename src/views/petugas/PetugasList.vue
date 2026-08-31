@@ -4,6 +4,9 @@ import { Plus, Search, Edit2, Trash2, X, Download, Upload } from 'lucide-vue-nex
 import Sidebar from '../../components/Sidebar.vue'
 import Navbar from '../../components/Navbar.vue'
 import { supabase } from '../../supabase'
+import { useToast } from '../../composables/useToast'
+
+const { addToast } = useToast()
 
 const dataPetugas = ref([])
 const searchQuery = ref('')
@@ -18,7 +21,7 @@ const triggerFileInput = () => {
 
 const exportCSV = () => {
   if (dataPetugas.value.length === 0) {
-    return alert('Tidak ada data untuk di-export')
+    return addToast('Tidak ada data untuk di-export', 'warning')
   }
   const headers = ['nip', 'nama_petugas', 'jabatan', 'no_telp']
   let csvContent = "data:text/csv;charset=utf-8,\n" + headers.join(",") + "\n"
@@ -71,13 +74,14 @@ const importCSV = (event) => {
       isLoading.value = true
       const { error } = await supabase.from('petugas').insert(importedData)
       if (error) {
-        alert('Error import data (pastikan format CSV benar & nip tidak duplikat): ' + error.message)
+        addToast('Error import data (pastikan format CSV benar & nip tidak duplikat): ' + error.message, 'error')
       } else {
-        alert(`Berhasil mengimport ${importedData.length} data petugas!`)
+        addToast(`Berhasil mengimport ${importedData.length} data petugas!`, 'success')
         fetchPetugas()
       }
     } catch (err) {
-      alert('Error saat import data: ' + err.message)
+      addToast('Error saat import data: ' + err.message, 'error')
+      console.error(err)
     } finally {
       isLoading.value = false
       event.target.value = '' 
@@ -142,16 +146,18 @@ const submitForm = async () => {
     const { id_petugas, ...insertData } = formPetugas.value
     const { error } = await supabase.from('petugas').insert([insertData])
     if (error) {
-      alert('Gagal menambahkan data: ' + error.message)
+      addToast('Gagal menambahkan data: ' + error.message, 'error')
       return
     }
+    addToast('Data petugas berhasil ditambahkan!', 'success')
   } else {
     const { id_petugas, ...updateData } = formPetugas.value
     const { error } = await supabase.from('petugas').update(updateData).eq('id_petugas', id_petugas)
     if (error) {
-      alert('Gagal mengubah data: ' + error.message)
+      addToast('Gagal mengubah data: ' + error.message, 'error')
       return
     }
+    addToast('Data petugas berhasil diubah!', 'success')
   }
   closeModal()
   fetchPetugas()
@@ -161,8 +167,9 @@ const deletePetugas = async (id) => {
   if(confirm('Yakin ingin menghapus data petugas ini?')) {
     const { error } = await supabase.from('petugas').delete().eq('id_petugas', id)
     if (error) {
-      alert('Gagal menghapus data: (Mungkin petugas ini sedang terikat dengan data peminjaman) ' + error.message)
+      addToast('Gagal menghapus data: (Mungkin petugas ini sedang terikat dengan data peminjaman) ' + error.message, 'error')
     } else {
+      addToast('Data petugas berhasil dihapus!', 'success')
       fetchPetugas()
     }
   }

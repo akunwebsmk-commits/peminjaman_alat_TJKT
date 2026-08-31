@@ -4,6 +4,9 @@ import { Plus, Search, Edit2, Trash2, X, Download, Upload } from 'lucide-vue-nex
 import Sidebar from '../../components/Sidebar.vue'
 import Navbar from '../../components/Navbar.vue'
 import { supabase } from '../../supabase'
+import { useToast } from '../../composables/useToast'
+
+const { addToast } = useToast()
 
 const dataSiswa = ref([])
 const searchQuery = ref('')
@@ -75,16 +78,18 @@ const submitForm = async () => {
     const { id_siswa, ...insertData } = formSiswa.value
     const { error } = await supabase.from('siswa').insert([insertData])
     if (error) {
-      alert('Gagal menambahkan data: ' + error.message)
+      addToast('Gagal menambahkan data: ' + error.message, 'error')
       return
     }
+    addToast('Data siswa berhasil ditambahkan!', 'success')
   } else {
     const { id_siswa, ...updateData } = formSiswa.value
     const { error } = await supabase.from('siswa').update(updateData).eq('id_siswa', id_siswa)
     if (error) {
-      alert('Gagal mengubah data: ' + error.message)
+      addToast('Gagal mengubah data: ' + error.message, 'error')
       return
     }
+    addToast('Data siswa berhasil diubah!', 'success')
   }
   closeModal()
   fetchSiswa()
@@ -95,11 +100,12 @@ const deleteSiswa = async (id) => {
     const { error } = await supabase.from('siswa').delete().eq('id_siswa', id)
     if (error) {
       if (error.code === '23503') {
-        alert('Gagal menghapus: Siswa ini tidak bisa dihapus karena memiliki Riwayat Peminjaman (walaupun statusnya sudah dikembalikan). Riwayat peminjaman tidak boleh hilang untuk keperluan laporan.')
+        addToast('Gagal menghapus: Siswa memiliki riwayat peminjaman.', 'error')
       } else {
-        alert('Gagal menghapus data: ' + error.message)
+        addToast('Gagal menghapus data: ' + error.message, 'error')
       }
     } else {
+      addToast('Data siswa berhasil dihapus!', 'success')
       fetchSiswa()
     }
   }
@@ -108,7 +114,7 @@ const deleteSiswa = async (id) => {
 // === CSV EXPORT & IMPORT ===
 
 const exportCSV = () => {
-  if (dataSiswa.value.length === 0) return alert('Tidak ada data untuk diexport.')
+  if (dataSiswa.value.length === 0) return addToast('Tidak ada data untuk diexport.', 'warning')
   
   const headers = ['nis', 'nama_siswa', 'kelas', 'no_telp', 'alamat']
   const rows = dataSiswa.value.map(s => {
@@ -143,14 +149,14 @@ const handleImport = (event) => {
     try {
       const text = e.target.result
       const lines = text.split('\n').filter(line => line.trim() !== '')
-      if (lines.length <= 1) return alert('File CSV kosong atau hanya berisi header.')
+      if (lines.length <= 1) return addToast('File CSV kosong atau hanya berisi header.', 'error')
 
       const headers = lines[0].toLowerCase().split(',').map(h => h.trim().replace(/^"|"$/g, ''))
       const expectedHeaders = ['nis', 'nama_siswa', 'kelas', 'no_telp', 'alamat']
       
       const isHeaderValid = expectedHeaders.every(h => headers.includes(h))
       if (!isHeaderValid) {
-        return alert('Format header CSV tidak valid. Pastikan baris pertama adalah: nis, nama_siswa, kelas, no_telp, alamat')
+        return addToast('Format header CSV tidak valid. Pastikan baris pertama: nis, nama_siswa, kelas, no_telp, alamat', 'error')
       }
 
       const payload = []
@@ -193,23 +199,23 @@ const handleImport = (event) => {
         }
       }
 
-      if (payload.length === 0) return alert('Tidak ada baris data siswa (berisi NIS & Nama) yang ditemukan di file.')
+      if (payload.length === 0) return addToast('Tidak ada baris data siswa yang ditemukan.', 'error')
 
       isLoading.value = true
       const { error } = await supabase.from('siswa').insert(payload)
       
       if (error) {
         if (error.code === '23505') {
-          alert('Gagal mengimpor: Ada NIS yang sudah terdaftar (Duplikat).')
+          addToast('Gagal mengimpor: Ada NIS yang sudah terdaftar (Duplikat).', 'error')
         } else {
-          alert('Gagal mengimpor data: ' + error.message)
+          addToast('Gagal mengimpor data: ' + error.message, 'error')
         }
       } else {
-        alert(`Berhasil mengimpor ${payload.length} data siswa!`)
+        addToast(`Berhasil mengimpor ${payload.length} data siswa!`, 'success')
         fetchSiswa()
       }
     } catch (err) {
-      alert('Terjadi kesalahan saat memproses file CSV.')
+      addToast('Terjadi kesalahan saat memproses file CSV.', 'error')
       console.error(err)
     } finally {
       isLoading.value = false

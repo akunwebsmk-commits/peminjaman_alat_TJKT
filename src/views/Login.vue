@@ -3,8 +3,10 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Wrench } from 'lucide-vue-next'
 import { supabase } from '../supabase'
+import { useToast } from '../composables/useToast'
 
 const router = useRouter()
+const { addToast } = useToast()
 const email = ref('')
 const password = ref('')
 const isLoading = ref(false)
@@ -19,8 +21,9 @@ const handleLogin = async () => {
   })
 
   if (error) {
-    alert('Gagal login: Cek kembali email dan password Anda.')
+    addToast('Gagal login: Cek kembali email dan password Anda.', 'error')
   } else {
+    addToast('Login berhasil! Selamat datang.', 'success')
     router.push('/dashboard')
   }
   
