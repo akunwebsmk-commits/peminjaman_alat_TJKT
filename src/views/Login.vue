@@ -1,14 +1,16 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Wrench } from 'lucide-vue-next'
+import { Eye, EyeOff } from 'lucide-vue-next'
 import { supabase } from '../supabase'
 import { useToast } from '../composables/useToast'
+import logoSmk from '../assets/logo smk.png'
 
 const router = useRouter()
 const { addToast } = useToast()
 const email = ref('')
 const password = ref('')
+const showPassword = ref(false)
 const isLoading = ref(false)
 
 const handleLogin = async () => {
@@ -35,8 +37,8 @@ const handleLogin = async () => {
   <div class="min-h-screen bg-gray-50 flex items-center justify-center p-4">
     <div class="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden p-8">
       <div class="flex flex-col items-center text-center mb-8">
-        <div class="p-4 bg-blue-50 text-blue-600 rounded-full mb-4">
-          <Wrench class="w-10 h-10" />
+        <div class="p-2 bg-blue-50 rounded-full mb-4">
+          <img :src="logoSmk" alt="Logo TKJ" class="w-16 h-16 object-contain" />
         </div>
         <h2 class="text-2xl font-bold text-gray-900">Admin Lab TKJ</h2>
         <p class="text-gray-500 mt-2 text-sm">Masuk untuk mengelola inventaris dan peminjaman</p>
@@ -56,13 +58,22 @@ const handleLogin = async () => {
 
         <div class="space-y-1">
           <label class="text-sm font-medium text-gray-700">Password</label>
-          <input 
-            type="password" 
-            v-model="password" 
-            required 
-            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-            placeholder="••••••••"
-          >
+          <div class="relative">
+            <input 
+              :type="showPassword ? 'text' : 'password'" 
+              v-model="password" 
+              required 
+              class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-12 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+              placeholder="••••••••"
+            >
+            <button 
+              type="button" 
+              @click="showPassword = !showPassword" 
+              class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700 focus:outline-none"
+            >
+              <component :is="showPassword ? EyeOff : Eye" class="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         <div class="pt-2">
