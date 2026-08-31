@@ -2,14 +2,29 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Wrench } from 'lucide-vue-next'
+import { supabase } from '../supabase'
 
 const router = useRouter()
-const username = ref('')
+const email = ref('')
 const password = ref('')
+const isLoading = ref(false)
 
-const handleLogin = () => {
-  // Mock login, redirect to dashboard
-  router.push('/dashboard')
+const handleLogin = async () => {
+  isLoading.value = true
+  
+  // Login menggunakan Supabase Auth
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: email.value,
+    password: password.value
+  })
+
+  if (error) {
+    alert('Gagal login: Cek kembali email dan password Anda.')
+  } else {
+    router.push('/dashboard')
+  }
+  
+  isLoading.value = false
 }
 </script>
 
@@ -26,13 +41,13 @@ const handleLogin = () => {
 
       <form @submit.prevent="handleLogin" class="space-y-5">
         <div class="space-y-1">
-          <label class="text-sm font-medium text-gray-700">Username / NIP</label>
+          <label class="text-sm font-medium text-gray-700">Email Admin</label>
           <input 
-            type="text" 
-            v-model="username" 
+            type="email" 
+            v-model="email" 
             required 
             class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-            placeholder="Masukkan username"
+            placeholder="admin@sekolah.com"
           >
         </div>
 
@@ -48,8 +63,8 @@ const handleLogin = () => {
         </div>
 
         <div class="pt-2">
-          <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-700 hover:to-sky-600 text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-[0.98]">
-            Masuk
+          <button type="submit" :disabled="isLoading" class="w-full bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-700 hover:to-sky-600 disabled:from-gray-400 disabled:to-gray-400 text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-[0.98]">
+            {{ isLoading ? 'Mengecek...' : 'Masuk' }}
           </button>
         </div>
       </form>

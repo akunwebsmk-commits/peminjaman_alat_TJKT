@@ -1,49 +1,49 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Search, ExternalLink, CalendarDays } from 'lucide-vue-next'
 import Sidebar from '../../components/Sidebar.vue'
 import Navbar from '../../components/Navbar.vue'
+import { supabase } from '../../supabase'
 
-// Mock Data
-const dataPeminjaman = ref([
-  { 
-    id: 1, 
-    siswa: { nama: 'Budi Santoso', kelas: 'XII TKJ 1' },
-    petugas: { nama: 'Pak Guru A' },
-    tgl_pinjam: '2023-10-20',
-    tgl_batas_kembali: '2023-10-25',
-    status: 'Terlambat',
-    detail_peminjaman: [
-      { alat: { nama: 'LAN Tester' }, jumlah_pinjam: 1 }
-    ]
-  },
-  { 
-    id: 2, 
-    siswa: { nama: 'Siti Aminah', kelas: 'XII TKJ 2' },
-    petugas: { nama: 'Pak Guru B' },
-    tgl_pinjam: '2023-10-24',
-    tgl_batas_kembali: '2023-10-30',
-    status: 'Dipinjam',
-    detail_peminjaman: [
-      { alat: { nama: 'Tang Crimping' }, jumlah_pinjam: 2 },
-      { alat: { nama: 'Kabel UTP' }, jumlah_pinjam: 10 }
-    ]
-  },
-  { 
-    id: 3, 
-    siswa: { nama: 'Andi Setiawan', kelas: 'XI TKJ 1' },
-    petugas: { nama: 'Pak Guru A' },
-    tgl_pinjam: '2023-10-15',
-    tgl_batas_kembali: '2023-10-18',
-    status: 'Dikembalikan',
-    detail_peminjaman: [
-      { alat: { nama: 'Switch Hub' }, jumlah_pinjam: 1 }
-    ]
-  }
-])
-
+const dataPeminjaman = ref([])
 const filterStatus = ref('')
 const searchQuery = ref('')
+const isLoading = ref(true)
+
+const fetchPeminjaman = async () => {
+  isLoading.value = true
+  const { data, error } = await supabase
+    .from('peminjaman')
+    .select(`
+      id_pinjam,
+      tgl_pinjam,
+      tgl_batas_kembali,
+      status,
+      siswa (
+        nama_siswa,
+        kelas
+      ),
+      detail_peminjaman (
+        jumlah_pinjam,
+        kondisi_saat_dikembalikan,
+        alat (
+          nama_alat
+        )
+      )
+    `)
+    .order('tgl_pinjam', { ascending: false })
+
+  if (error) {
+    console.error('Error fetching peminjaman:', error)
+  } else {
+    dataPeminjaman.value = data || []
+  }
+  isLoading.value = false
+}
+
+onMounted(() => {
+  fetchPeminjaman()
+})
 
 const filteredPeminjaman = computed(() => {
   let result = dataPeminjaman.value
@@ -55,13 +55,18 @@ const filteredPeminjaman = computed(() => {
   if (searchQuery.value) {
     const q = searchQuery.value.toLowerCase()
     result = result.filter(p => 
-      p.siswa.nama.toLowerCase().includes(q) || 
-      p.siswa.kelas.toLowerCase().includes(q)
+      p.siswa?.nama_siswa?.toLowerCase().includes(q) || 
+      p.siswa?.kelas?.toLowerCase().includes(q)
     )
   }
 
   return result
 })
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return '-'
+  return new Date(dateStr).toISOString().split('T')[0]
+}
 </script>
 
 <template>
@@ -104,23 +109,31 @@ const filteredPeminjaman = computed(() => {
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="pinjam in filteredPeminjaman" :key="pinjam.id" class="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                <tr v-if="isLoading">
+                  <td colspan="5" class="py-8 text-center text-gray-500">Memuat data...</td>
+                </tr>
+                <tr v-else v-for="pinjam in filteredPeminjaman" :key="pinjam.id_pinjam" class="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                   <td class="py-4 px-6">
-                    <p class="font-medium text-gray-900">{{ pinjam.siswa.nama }}</p>
-                    <p class="text-xs text-gray-500">{{ pinjam.siswa.kelas }}</p>
+                    <p class="font-medium text-gray-900">{{ pinjam.siswa?.nama_siswa }}</p>
+                    <p class="text-xs text-gray-500">{{ pinjam.siswa?.kelas }}</p>
                   </td>
                   <td class="py-4 px-6">
                     <ul class="text-sm text-gray-700 space-y-1">
                       <li v-for="(detail, i) in pinjam.detail_peminjaman" :key="i" class="flex items-center gap-2">
-                        <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
-                        {{ detail.jumlah_pinjam }}x {{ detail.alat.nama }}
+                        <span class="w-1.5 h-1.5 rounded-full" :class="detail.kondisi_saat_dikembalikan === 'Belum Kembali' ? 'bg-blue-400' : 'bg-gray-300'"></span>
+                        {{ detail.jumlah_pinjam }}x {{ detail.alat?.nama_alat }}
                       </li>
                     </ul>
                   </td>
                   <td class="py-4 px-6">
                     <div class="text-sm">
-                      <p class="flex items-center gap-1.5 text-gray-600 mb-1"><CalendarDays class="w-3.5 h-3.5" /> {{ pinjam.tgl_pinjam }}</p>
-                      <p class="flex items-center gap-1.5 text-gray-500 text-xs">s/d {{ pinjam.tgl_batas_kembali }}</p>
+                      <p class="flex items-center gap-1.5 text-gray-600 mb-1">
+                        <CalendarDays class="w-3.5 h-3.5" /> 
+                        {{ formatDate(pinjam.tgl_pinjam) }}
+                      </p>
+                      <p class="flex items-center gap-1.5 text-gray-500 text-xs">
+                        s/d {{ formatDate(pinjam.tgl_batas_kembali) }}
+                      </p>
                     </div>
                   </td>
                   <td class="py-4 px-6">
@@ -134,14 +147,14 @@ const filteredPeminjaman = computed(() => {
                   </td>
                   <td class="py-4 px-6">
                     <div class="flex items-center justify-end gap-2">
-                      <router-link v-if="pinjam.status !== 'Dikembalikan'" :to="`/pengembalian/${pinjam.id}`" class="text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">
+                      <router-link v-if="pinjam.status !== 'Dikembalikan'" :to="`/pengembalian/${pinjam.id_pinjam}`" class="text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">
                         <ExternalLink class="w-4 h-4" /> Kembalikan
                       </router-link>
                       <span v-else class="text-sm text-gray-400 italic">Selesai</span>
                     </div>
                   </td>
                 </tr>
-                <tr v-if="filteredPeminjaman.length === 0">
+                <tr v-if="!isLoading && filteredPeminjaman.length === 0">
                   <td colspan="5" class="py-8 text-center text-gray-500">Data peminjaman tidak ditemukan.</td>
                 </tr>
               </tbody>

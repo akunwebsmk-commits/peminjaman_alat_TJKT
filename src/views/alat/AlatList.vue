@@ -1,27 +1,57 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { Plus, Search, Edit2, Trash2, X, AlertCircle, CheckCircle2 } from 'lucide-vue-next'
 import Sidebar from '../../components/Sidebar.vue'
 import Navbar from '../../components/Navbar.vue'
+import { supabase } from '../../supabase'
 
-// Mock Data
-const dataAlat = ref([
-  { id: 1, kode: 'ALT-001', nama: 'LAN Tester', stok: 5, tersedia: 5, kondisi: 'Baik', keterangan: '-' },
-  { id: 2, kode: 'ALT-002', nama: 'Tang Crimping', stok: 10, tersedia: 8, kondisi: 'Baik', keterangan: '-' },
-  { id: 3, kode: 'ALT-003', nama: 'Switch Hub 8 Port', stok: 2, tersedia: 0, kondisi: 'Rusak Ringan', keterangan: 'Port 1 error' },
-])
-
+const dataAlat = ref([])
 const searchQuery = ref('')
 const filterKondisi = ref('')
 const isModalOpen = ref(false)
 const modalMode = ref('add') 
+const isLoading = ref(true)
 
 const formAlat = ref({
-  kode: '',
-  nama: '',
-  stok: 1,
+  id_alat: null,
+  kode_alat: '',
+  nama_alat: '',
+  jumlah_stok: 1,
   kondisi: 'Baik',
   keterangan: ''
+})
+
+const fetchAlat = async () => {
+  isLoading.value = true
+  const { data, error } = await supabase.from('alat').select('*').order('id_alat', { ascending: false })
+  if (error) {
+    console.error('Error fetching alat:', error)
+  } else {
+    dataAlat.value = data || []
+  }
+  isLoading.value = false
+}
+
+onMounted(() => {
+  fetchAlat()
+})
+
+const filteredAlat = computed(() => {
+  let result = dataAlat.value
+
+  if (filterKondisi.value) {
+    result = result.filter(a => a.kondisi === filterKondisi.value)
+  }
+
+  if (searchQuery.value) {
+    const q = searchQuery.value.toLowerCase()
+    result = result.filter(a => 
+      a.kode_alat.toLowerCase().includes(q) || 
+      a.nama_alat.toLowerCase().includes(q)
+    )
+  }
+
+  return result
 })
 
 const openModal = (mode, data = null) => {
@@ -29,7 +59,7 @@ const openModal = (mode, data = null) => {
   if (mode === 'edit' && data) {
     formAlat.value = { ...data }
   } else {
-    formAlat.value = { kode: '', nama: '', stok: 1, kondisi: 'Baik', keterangan: '' }
+    formAlat.value = { id_alat: null, kode_alat: '', nama_alat: '', jumlah_stok: 1, kondisi: 'Baik', keterangan: '' }
   }
   isModalOpen.value = true
 }
@@ -38,29 +68,44 @@ const closeModal = () => {
   isModalOpen.value = false
 }
 
-const submitForm = () => {
+const submitForm = async () => {
   if (modalMode.value === 'add') {
-    dataAlat.value.push({
-      id: Date.now(),
-      tersedia: formAlat.value.stok,
-      ...formAlat.value
-    })
+    const { id_alat, ...insertData } = formAlat.value
+    // jumlah_tersedia sama dengan jumlah_stok saat awal ditambah
+    insertData.jumlah_tersedia = insertData.jumlah_stok
+    
+    const { error } = await supabase.from('alat').insert([insertData])
+    if (error) {
+      alert('Gagal menambahkan data: ' + error.message)
+      return
+    }
   } else {
-    const index = dataAlat.value.findIndex(a => a.id === formAlat.value.id)
-    if (index !== -1) {
-      const selisih = formAlat.value.stok - dataAlat.value[index].stok
-      dataAlat.value[index] = { 
-        ...formAlat.value,
-        tersedia: dataAlat.value[index].tersedia + selisih
-      }
+    const { id_alat, ...updateData } = formAlat.value
+    // Menyesuaikan jumlah_tersedia jika stok berubah
+    const oldData = dataAlat.value.find(a => a.id_alat === id_alat)
+    if (oldData) {
+      const selisih = updateData.jumlah_stok - oldData.jumlah_stok
+      updateData.jumlah_tersedia = oldData.jumlah_tersedia + selisih
+    }
+
+    const { error } = await supabase.from('alat').update(updateData).eq('id_alat', id_alat)
+    if (error) {
+      alert('Gagal mengubah data: ' + error.message)
+      return
     }
   }
   closeModal()
+  fetchAlat()
 }
 
-const deleblueat = (id) => {
+const deleteAlat = async (id) => {
   if(confirm('Yakin ingin menghapus data alat ini?')) {
-    dataAlat.value = dataAlat.value.filter(a => a.id !== id)
+    const { error } = await supabase.from('alat').delete().eq('id_alat', id)
+    if (error) {
+      alert('Gagal menghapus data: ' + error.message)
+    } else {
+      fetchAlat()
+    }
   }
 }
 </script>
@@ -109,13 +154,16 @@ const deleblueat = (id) => {
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="alat in dataAlat" :key="alat.id" class="border-b border-gray-50 hover:bg-gray-50/50 transition-colors" :class="{'bg-red-50/30': alat.tersedia === 0}">
-                  <td class="py-4 px-6 font-medium text-gray-900">{{ alat.kode }}</td>
-                  <td class="py-4 px-6 text-gray-700 font-medium">{{ alat.nama }}</td>
-                  <td class="py-4 px-6 text-center text-gray-600">{{ alat.stok }}</td>
+                <tr v-if="isLoading">
+                  <td colspan="6" class="py-8 text-center text-gray-500">Memuat data...</td>
+                </tr>
+                <tr v-else v-for="alat in filteredAlat" :key="alat.id_alat" class="border-b border-gray-50 hover:bg-gray-50/50 transition-colors" :class="{'bg-red-50/30': alat.jumlah_tersedia <= 0}">
+                  <td class="py-4 px-6 font-medium text-gray-900">{{ alat.kode_alat }}</td>
+                  <td class="py-4 px-6 text-gray-700 font-medium">{{ alat.nama_alat }}</td>
+                  <td class="py-4 px-6 text-center text-gray-600">{{ alat.jumlah_stok }}</td>
                   <td class="py-4 px-6 text-center">
-                    <span v-if="alat.tersedia > 0" class="inline-flex items-center gap-1 text-emerald-600 font-medium bg-emerald-50 px-2.5 py-1 rounded-md text-xs">
-                      <CheckCircle2 class="w-3.5 h-3.5" /> {{ alat.tersedia }} Tersedia
+                    <span v-if="alat.jumlah_tersedia > 0" class="inline-flex items-center gap-1 text-emerald-600 font-medium bg-emerald-50 px-2.5 py-1 rounded-md text-xs">
+                      <CheckCircle2 class="w-3.5 h-3.5" /> {{ alat.jumlah_tersedia }} Tersedia
                     </span>
                     <span v-else class="inline-flex items-center gap-1 text-red-600 font-medium bg-red-50 px-2.5 py-1 rounded-md text-xs">
                       <AlertCircle class="w-3.5 h-3.5" /> Habis
@@ -135,13 +183,13 @@ const deleblueat = (id) => {
                       <button @click="openModal('edit', alat)" class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                         <Edit2 class="w-4 h-4" />
                       </button>
-                      <button @click="deleblueat(alat.id)" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                      <button @click="deleteAlat(alat.id_alat)" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                         <Trash2 class="w-4 h-4" />
                       </button>
                     </div>
                   </td>
                 </tr>
-                <tr v-if="dataAlat.length === 0">
+                <tr v-if="!isLoading && filteredAlat.length === 0">
                   <td colspan="6" class="py-8 text-center text-gray-500">Data alat tidak ditemukan.</td>
                 </tr>
               </tbody>
@@ -164,16 +212,16 @@ const deleblueat = (id) => {
           <form @submit.prevent="submitForm" class="space-y-4">
             <div>
               <label class="text-sm font-medium text-gray-700 block mb-1">Kode Alat</label>
-              <input type="text" v-model="formAlat.kode" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+              <input type="text" v-model="formAlat.kode_alat" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
             </div>
             <div>
               <label class="text-sm font-medium text-gray-700 block mb-1">Nama Alat</label>
-              <input type="text" v-model="formAlat.nama" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+              <input type="text" v-model="formAlat.nama_alat" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
             </div>
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="text-sm font-medium text-gray-700 block mb-1">Total Stok</label>
-                <input type="number" min="1" v-model="formAlat.stok" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                <input type="number" min="1" v-model="formAlat.jumlah_stok" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
               </div>
               <div>
                 <label class="text-sm font-medium text-gray-700 block mb-1">Kondisi</label>

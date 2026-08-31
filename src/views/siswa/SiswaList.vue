@@ -1,26 +1,57 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { Plus, Search, Edit2, Trash2, X } from 'lucide-vue-next'
 import Sidebar from '../../components/Sidebar.vue'
 import Navbar from '../../components/Navbar.vue'
+import { supabase } from '../../supabase'
 
-// Mock Data
-const dataSiswa = ref([
-  { id: 1, nis: '1001', nama: 'Budi Santoso', kelas: 'XII TKJ 1', no_telp: '08123456789', alamat: 'Jl. Merdeka No.1' },
-  { id: 2, nis: '1002', nama: 'Siti Aminah', kelas: 'XII TKJ 2', no_telp: '08987654321', alamat: 'Jl. Sudirman No.5' },
-])
-
+const dataSiswa = ref([])
 const searchQuery = ref('')
 const filterKelas = ref('')
 const isModalOpen = ref(false)
 const modalMode = ref('add') // 'add' or 'edit'
+const isLoading = ref(true)
 
 const formSiswa = ref({
+  id_siswa: null,
   nis: '',
-  nama: '',
+  nama_siswa: '',
   kelas: '',
   no_telp: '',
   alamat: ''
+})
+
+const fetchSiswa = async () => {
+  isLoading.value = true
+  const { data, error } = await supabase.from('siswa').select('*').order('id_siswa', { ascending: false })
+  if (error) {
+    console.error('Error fetching siswa:', error)
+  } else {
+    dataSiswa.value = data || []
+  }
+  isLoading.value = false
+}
+
+onMounted(() => {
+  fetchSiswa()
+})
+
+const filteredSiswa = computed(() => {
+  let result = dataSiswa.value
+  
+  if (filterKelas.value) {
+    result = result.filter(s => s.kelas === filterKelas.value)
+  }
+  
+  if (searchQuery.value) {
+    const q = searchQuery.value.toLowerCase()
+    result = result.filter(s => 
+      s.nis.toLowerCase().includes(q) || 
+      s.nama_siswa.toLowerCase().includes(q)
+    )
+  }
+  
+  return result
 })
 
 const openModal = (mode, data = null) => {
@@ -28,7 +59,7 @@ const openModal = (mode, data = null) => {
   if (mode === 'edit' && data) {
     formSiswa.value = { ...data }
   } else {
-    formSiswa.value = { nis: '', nama: '', kelas: '', no_telp: '', alamat: '' }
+    formSiswa.value = { id_siswa: null, nis: '', nama_siswa: '', kelas: '', no_telp: '', alamat: '' }
   }
   isModalOpen.value = true
 }
@@ -37,24 +68,34 @@ const closeModal = () => {
   isModalOpen.value = false
 }
 
-const submitForm = () => {
+const submitForm = async () => {
   if (modalMode.value === 'add') {
-    dataSiswa.value.push({
-      id: Date.now(),
-      ...formSiswa.value
-    })
+    const { id_siswa, ...insertData } = formSiswa.value
+    const { error } = await supabase.from('siswa').insert([insertData])
+    if (error) {
+      alert('Gagal menambahkan data: ' + error.message)
+      return
+    }
   } else {
-    const index = dataSiswa.value.findIndex(s => s.id === formSiswa.value.id)
-    if (index !== -1) {
-      dataSiswa.value[index] = { ...formSiswa.value }
+    const { id_siswa, ...updateData } = formSiswa.value
+    const { error } = await supabase.from('siswa').update(updateData).eq('id_siswa', id_siswa)
+    if (error) {
+      alert('Gagal mengubah data: ' + error.message)
+      return
     }
   }
   closeModal()
+  fetchSiswa()
 }
 
-const deleteSiswa = (id) => {
+const deleteSiswa = async (id) => {
   if(confirm('Yakin ingin menghapus data siswa ini?')) {
-    dataSiswa.value = dataSiswa.value.filter(s => s.id !== id)
+    const { error } = await supabase.from('siswa').delete().eq('id_siswa', id)
+    if (error) {
+      alert('Gagal menghapus data: ' + error.message)
+    } else {
+      fetchSiswa()
+    }
   }
 }
 </script>
@@ -84,6 +125,10 @@ const deleteSiswa = (id) => {
             </div>
             <select v-model="filterKelas" class="w-full md:w-48 border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-gray-700">
               <option value="">Semua Kelas</option>
+              <option value="X TKJ 1">X TKJ 1</option>
+              <option value="X TKJ 2">X TKJ 2</option>
+              <option value="XI TKJ 1">XI TKJ 1</option>
+              <option value="XI TKJ 2">XI TKJ 2</option>
               <option value="XII TKJ 1">XII TKJ 1</option>
               <option value="XII TKJ 2">XII TKJ 2</option>
             </select>
@@ -101,25 +146,28 @@ const deleteSiswa = (id) => {
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="siswa in dataSiswa" :key="siswa.id" class="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                <tr v-if="isLoading">
+                  <td colspan="5" class="py-8 text-center text-gray-500">Memuat data...</td>
+                </tr>
+                <tr v-else v-for="siswa in filteredSiswa" :key="siswa.id_siswa" class="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                   <td class="py-4 px-6 font-medium text-gray-900">{{ siswa.nis }}</td>
-                  <td class="py-4 px-6 text-gray-700">{{ siswa.nama }}</td>
+                  <td class="py-4 px-6 text-gray-700">{{ siswa.nama_siswa }}</td>
                   <td class="py-4 px-6">
                     <span class="bg-gray-100 text-gray-600 px-2.5 py-1 rounded-md text-xs font-medium">{{ siswa.kelas }}</span>
                   </td>
-                  <td class="py-4 px-6 text-gray-600 text-sm">{{ siswa.no_telp }}</td>
+                  <td class="py-4 px-6 text-gray-600 text-sm">{{ siswa.no_telp || '-' }}</td>
                   <td class="py-4 px-6">
                     <div class="flex items-center justify-end gap-2">
                       <button @click="openModal('edit', siswa)" class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                         <Edit2 class="w-4 h-4" />
                       </button>
-                      <button @click="deleteSiswa(siswa.id)" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                      <button @click="deleteSiswa(siswa.id_siswa)" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                         <Trash2 class="w-4 h-4" />
                       </button>
                     </div>
                   </td>
                 </tr>
-                <tr v-if="dataSiswa.length === 0">
+                <tr v-if="!isLoading && filteredSiswa.length === 0">
                   <td colspan="5" class="py-8 text-center text-gray-500">Data siswa tidak ditemukan.</td>
                 </tr>
               </tbody>
@@ -146,18 +194,22 @@ const deleteSiswa = (id) => {
             </div>
             <div>
               <label class="text-sm font-medium text-gray-700 block mb-1">Nama Lengkap</label>
-              <input type="text" v-model="formSiswa.nama" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+              <input type="text" v-model="formSiswa.nama_siswa" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
             </div>
             <div>
               <label class="text-sm font-medium text-gray-700 block mb-1">Kelas</label>
               <select v-model="formSiswa.kelas" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                <option value="X TKJ 1">X TKJ 1</option>
+                <option value="X TKJ 2">X TKJ 2</option>
+                <option value="XI TKJ 1">XI TKJ 1</option>
+                <option value="XI TKJ 2">XI TKJ 2</option>
                 <option value="XII TKJ 1">XII TKJ 1</option>
                 <option value="XII TKJ 2">XII TKJ 2</option>
               </select>
             </div>
             <div>
               <label class="text-sm font-medium text-gray-700 block mb-1">No. WhatsApp</label>
-              <input type="text" v-model="formSiswa.no_telp" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+              <input type="text" v-model="formSiswa.no_telp" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
             </div>
             <div>
               <label class="text-sm font-medium text-gray-700 block mb-1">Alamat</label>
@@ -173,3 +225,4 @@ const deleteSiswa = (id) => {
     </div>
   </div>
 </template>
+
