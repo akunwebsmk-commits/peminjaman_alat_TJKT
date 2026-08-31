@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { Plus, Search, Edit2, Trash2, X } from 'lucide-vue-next'
+import { Plus, Search, Edit2, Trash2, X, Download, Upload } from 'lucide-vue-next'
 import Sidebar from '../../components/Sidebar.vue'
 import Navbar from '../../components/Navbar.vue'
 import { supabase } from '../../supabase'
@@ -11,6 +11,8 @@ const filterKelas = ref('')
 const isModalOpen = ref(false)
 const modalMode = ref('add') // 'add' or 'edit'
 const isLoading = ref(true)
+
+const fileInput = ref(null)
 
 const formSiswa = ref({
   id_siswa: null,
@@ -98,6 +100,120 @@ const deleteSiswa = async (id) => {
     }
   }
 }
+
+// === CSV EXPORT & IMPORT ===
+
+const exportCSV = () => {
+  if (dataSiswa.value.length === 0) return alert('Tidak ada data untuk diexport.')
+  
+  const headers = ['nis', 'nama_siswa', 'kelas', 'no_telp', 'alamat']
+  const rows = dataSiswa.value.map(s => {
+    // Tambahkan tanda kutip untuk menangani koma atau newline di teks (misal: alamat)
+    const name = `"${(s.nama_siswa || '').replace(/"/g, '""')}"`
+    const address = `"${(s.alamat || '').replace(/"/g, '""')}"`
+    return [s.nis, name, s.kelas, s.no_telp || '', address].join(',')
+  })
+  
+  const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows].join('\n')
+  const encodedUri = encodeURI(csvContent)
+  const link = document.createElement('a')
+  link.setAttribute('href', encodedUri)
+  link.setAttribute('download', 'data_siswa.csv')
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
+const triggerImport = () => {
+  if (fileInput.value) {
+    fileInput.value.click()
+  }
+}
+
+const handleImport = (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  const reader = new FileReader()
+  reader.onload = async (e) => {
+    try {
+      const text = e.target.result
+      const lines = text.split('\n').filter(line => line.trim() !== '')
+      if (lines.length <= 1) return alert('File CSV kosong atau hanya berisi header.')
+
+      const headers = lines[0].toLowerCase().split(',').map(h => h.trim().replace(/^"|"$/g, ''))
+      const expectedHeaders = ['nis', 'nama_siswa', 'kelas', 'no_telp', 'alamat']
+      
+      const isHeaderValid = expectedHeaders.every(h => headers.includes(h))
+      if (!isHeaderValid) {
+        return alert('Format header CSV tidak valid. Pastikan baris pertama adalah: nis, nama_siswa, kelas, no_telp, alamat')
+      }
+
+      const payload = []
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i]
+        
+        // Parsing CSV yang lebih aman untuk menangani teks dengan koma dalam tanda kutip
+        const rowValues = []
+        let inQuotes = false
+        let currentValue = ''
+        
+        for (let char of line) {
+          if (char === '"') {
+            inQuotes = !inQuotes
+          } else if (char === ',' && !inQuotes) {
+            rowValues.push(currentValue.trim())
+            currentValue = ''
+          } else {
+            currentValue += char
+          }
+        }
+        rowValues.push(currentValue.trim())
+
+        const obj = {}
+        headers.forEach((header, index) => {
+          if (expectedHeaders.includes(header)) {
+            // Hilangkan quotes jika terbawa
+            let val = rowValues[index] || ''
+            if (val.startsWith('"') && val.endsWith('"')) {
+              val = val.substring(1, val.length - 1)
+            }
+            // Tangani double quotes
+            val = val.replace(/""/g, '"')
+            obj[header] = val || null
+          }
+        })
+        
+        if (obj.nis && obj.nama_siswa) {
+          payload.push(obj)
+        }
+      }
+
+      if (payload.length === 0) return alert('Tidak ada baris data siswa (berisi NIS & Nama) yang ditemukan di file.')
+
+      isLoading.value = true
+      const { error } = await supabase.from('siswa').insert(payload)
+      
+      if (error) {
+        if (error.code === '23505') {
+          alert('Gagal mengimpor: Ada NIS yang sudah terdaftar (Duplikat).')
+        } else {
+          alert('Gagal mengimpor data: ' + error.message)
+        }
+      } else {
+        alert(`Berhasil mengimpor ${payload.length} data siswa!`)
+        fetchSiswa()
+      }
+    } catch (err) {
+      alert('Terjadi kesalahan saat memproses file CSV.')
+      console.error(err)
+    } finally {
+      isLoading.value = false
+      event.target.value = '' // Reset input file
+    }
+  }
+  reader.readAsText(file)
+}
 </script>
 
 <template>
@@ -123,15 +239,29 @@ const deleteSiswa = async (id) => {
               <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input type="text" v-model="searchQuery" placeholder="Cari NIS atau Nama..." class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
             </div>
-            <select v-model="filterKelas" class="w-full md:w-48 border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-gray-700">
-              <option value="">Semua Kelas</option>
-              <option value="X TKJ 1">X TKJ 1</option>
-              <option value="X TKJ 2">X TKJ 2</option>
-              <option value="XI TKJ 1">XI TKJ 1</option>
-              <option value="XI TKJ 2">XI TKJ 2</option>
-              <option value="XII TKJ 1">XII TKJ 1</option>
-              <option value="XII TKJ 2">XII TKJ 2</option>
-            </select>
+            
+            <div class="flex items-center gap-3 w-full md:w-auto overflow-x-auto">
+              <select v-model="filterKelas" class="w-full md:w-48 border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-gray-700 shrink-0">
+                <option value="">Semua Kelas</option>
+                <option value="X TKJ 1">X TKJ 1</option>
+                <option value="X TKJ 2">X TKJ 2</option>
+                <option value="XI TKJ 1">XI TKJ 1</option>
+                <option value="XI TKJ 2">XI TKJ 2</option>
+                <option value="XII TKJ 1">XII TKJ 1</option>
+                <option value="XII TKJ 2">XII TKJ 2</option>
+              </select>
+              
+              <div class="w-px h-8 bg-gray-200 hidden md:block shrink-0"></div>
+              
+              <button @click="exportCSV" class="shrink-0 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5 shadow-sm" title="Download data sebagai CSV">
+                <Download class="w-4 h-4" /> Export CSV
+              </button>
+              
+              <button @click="triggerImport" class="shrink-0 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5 shadow-sm" title="Upload data dari file CSV">
+                <Upload class="w-4 h-4" /> Import CSV
+              </button>
+              <input type="file" ref="fileInput" accept=".csv" class="hidden" @change="handleImport">
+            </div>
           </div>
           
           <div class="overflow-x-auto">
@@ -225,4 +355,3 @@ const deleteSiswa = async (id) => {
     </div>
   </div>
 </template>
-
