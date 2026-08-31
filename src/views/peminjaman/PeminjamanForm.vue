@@ -313,7 +313,7 @@ const submitForm = async () => {
                   </div>
                 </div>
                 <div class="w-24">
-                  <input type="number" min="1" :max="dataAlat.find(a => a.id_alat === item.id_alat)?.jumlah_tersedia || 1" v-model="item.jumlah" required placeholder="Jml" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-center">
+                  <input type="number" min="1" v-model="item.jumlah" required placeholder="Jml" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-center">
                 </div>
                 <button type="button" @click="removeItem(index)" :disabled="form.items.length === 1" class="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50">
                   <Trash2 class="w-5 h-5" />
