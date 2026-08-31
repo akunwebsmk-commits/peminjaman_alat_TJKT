@@ -5,7 +5,7 @@ defineProps({
   icon: Object,
   colorClass: {
     type: String,
-    default: 'text-teal-600 bg-teal-50'
+    default: 'text-blue-600 bg-blue-50'
   }
 })
 </script>

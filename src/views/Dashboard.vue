@@ -75,7 +75,7 @@ const overduePeminjaman = [
                       <a :href="`https://wa.me/${item.no_telp}?text=Halo ${item.siswa}, tolong segera kembalikan ${item.alat} karena sudah terlambat ${item.telat_hari} hari.`" target="_blank" class="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Hubungi via WhatsApp">
                         <MessageCircle class="w-5 h-5" />
                       </a>
-                      <router-link :to="`/pengembalian/${item.id}`" class="text-sm font-medium text-teal-600 bg-teal-50 hover:bg-teal-100 px-3 py-1.5 rounded-lg transition-colors">
+                      <router-link :to="`/pengembalian/${item.id}`" class="text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors">
                         Proses Kembali
                       </router-link>
                     </div>

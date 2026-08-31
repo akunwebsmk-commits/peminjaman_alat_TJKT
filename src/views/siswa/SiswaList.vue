@@ -71,7 +71,7 @@ const deleteSiswa = (id) => {
             <h1 class="text-2xl font-bold text-gray-900">Data Siswa</h1>
             <p class="text-gray-500 mt-1">Kelola data siswa yang terdaftar di lab</p>
           </div>
-          <button @click="openModal('add')" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 shadow-sm shadow-teal-200">
+          <button @click="openModal('add')" class="bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-700 hover:to-sky-600 text-white px-4 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 shadow-sm shadow-blue-200">
             <Plus class="w-5 h-5" /> Tambah Siswa
           </button>
         </div>
@@ -80,9 +80,9 @@ const deleteSiswa = (id) => {
           <div class="p-5 border-b border-gray-100 flex flex-col md:flex-row gap-4 justify-between items-center bg-gray-50/50">
             <div class="relative w-full md:w-96">
               <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input type="text" v-model="searchQuery" placeholder="Cari NIS atau Nama..." class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all">
+              <input type="text" v-model="searchQuery" placeholder="Cari NIS atau Nama..." class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
             </div>
-            <select v-model="filterKelas" class="w-full md:w-48 border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all text-gray-700">
+            <select v-model="filterKelas" class="w-full md:w-48 border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-gray-700">
               <option value="">Semua Kelas</option>
               <option value="XII TKJ 1">XII TKJ 1</option>
               <option value="XII TKJ 2">XII TKJ 2</option>
@@ -142,30 +142,30 @@ const deleteSiswa = (id) => {
           <form @submit.prevent="submitForm" class="space-y-4">
             <div>
               <label class="text-sm font-medium text-gray-700 block mb-1">NIS</label>
-              <input type="text" v-model="formSiswa.nis" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all">
+              <input type="text" v-model="formSiswa.nis" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
             </div>
             <div>
               <label class="text-sm font-medium text-gray-700 block mb-1">Nama Lengkap</label>
-              <input type="text" v-model="formSiswa.nama" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all">
+              <input type="text" v-model="formSiswa.nama" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
             </div>
             <div>
               <label class="text-sm font-medium text-gray-700 block mb-1">Kelas</label>
-              <select v-model="formSiswa.kelas" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all">
+              <select v-model="formSiswa.kelas" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
                 <option value="XII TKJ 1">XII TKJ 1</option>
                 <option value="XII TKJ 2">XII TKJ 2</option>
               </select>
             </div>
             <div>
               <label class="text-sm font-medium text-gray-700 block mb-1">No. WhatsApp</label>
-              <input type="text" v-model="formSiswa.no_telp" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all">
+              <input type="text" v-model="formSiswa.no_telp" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
             </div>
             <div>
               <label class="text-sm font-medium text-gray-700 block mb-1">Alamat</label>
-              <textarea v-model="formSiswa.alamat" rows="2" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all resize-none"></textarea>
+              <textarea v-model="formSiswa.alamat" rows="2" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-none"></textarea>
             </div>
             <div class="pt-4 flex gap-3">
               <button type="button" @click="closeModal" class="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors">Batal</button>
-              <button type="submit" class="flex-1 px-4 py-2.5 bg-teal-600 text-white font-medium rounded-xl hover:bg-teal-700 transition-colors shadow-sm shadow-teal-200">Simpan Data</button>
+              <button type="submit" class="flex-1 px-4 py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors shadow-sm shadow-blue-200">Simpan Data</button>
             </div>
           </form>
         </div>

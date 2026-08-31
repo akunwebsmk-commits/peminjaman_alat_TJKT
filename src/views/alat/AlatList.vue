@@ -58,7 +58,7 @@ const submitForm = () => {
   closeModal()
 }
 
-const deleteAlat = (id) => {
+const deleblueat = (id) => {
   if(confirm('Yakin ingin menghapus data alat ini?')) {
     dataAlat.value = dataAlat.value.filter(a => a.id !== id)
   }
@@ -77,7 +77,7 @@ const deleteAlat = (id) => {
             <h1 class="text-2xl font-bold text-gray-900">Inventaris Alat</h1>
             <p class="text-gray-500 mt-1">Kelola data alat dan perlengkapan laboratorium</p>
           </div>
-          <button @click="openModal('add')" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 shadow-sm shadow-teal-200">
+          <button @click="openModal('add')" class="bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-700 hover:to-sky-600 text-white px-4 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 shadow-sm shadow-blue-200">
             <Plus class="w-5 h-5" /> Tambah Alat
           </button>
         </div>
@@ -86,9 +86,9 @@ const deleteAlat = (id) => {
           <div class="p-5 border-b border-gray-100 flex flex-col md:flex-row gap-4 justify-between items-center bg-gray-50/50">
             <div class="relative w-full md:w-96">
               <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input type="text" v-model="searchQuery" placeholder="Cari Kode atau Nama Alat..." class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all">
+              <input type="text" v-model="searchQuery" placeholder="Cari Kode atau Nama Alat..." class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
             </div>
-            <select v-model="filterKondisi" class="w-full md:w-48 border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all text-gray-700">
+            <select v-model="filterKondisi" class="w-full md:w-48 border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-gray-700">
               <option value="">Semua Kondisi</option>
               <option value="Baik">Baik</option>
               <option value="Rusak Ringan">Rusak Ringan</option>
@@ -135,7 +135,7 @@ const deleteAlat = (id) => {
                       <button @click="openModal('edit', alat)" class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                         <Edit2 class="w-4 h-4" />
                       </button>
-                      <button @click="deleteAlat(alat.id)" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                      <button @click="deleblueat(alat.id)" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                         <Trash2 class="w-4 h-4" />
                       </button>
                     </div>
@@ -164,20 +164,20 @@ const deleteAlat = (id) => {
           <form @submit.prevent="submitForm" class="space-y-4">
             <div>
               <label class="text-sm font-medium text-gray-700 block mb-1">Kode Alat</label>
-              <input type="text" v-model="formAlat.kode" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all">
+              <input type="text" v-model="formAlat.kode" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
             </div>
             <div>
               <label class="text-sm font-medium text-gray-700 block mb-1">Nama Alat</label>
-              <input type="text" v-model="formAlat.nama" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all">
+              <input type="text" v-model="formAlat.nama" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
             </div>
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="text-sm font-medium text-gray-700 block mb-1">Total Stok</label>
-                <input type="number" min="1" v-model="formAlat.stok" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all">
+                <input type="number" min="1" v-model="formAlat.stok" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
               </div>
               <div>
                 <label class="text-sm font-medium text-gray-700 block mb-1">Kondisi</label>
-                <select v-model="formAlat.kondisi" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all">
+                <select v-model="formAlat.kondisi" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
                   <option value="Baik">Baik</option>
                   <option value="Rusak Ringan">Rusak Ringan</option>
                   <option value="Rusak Berat">Rusak Berat</option>
@@ -186,11 +186,11 @@ const deleteAlat = (id) => {
             </div>
             <div>
               <label class="text-sm font-medium text-gray-700 block mb-1">Keterangan (Opsional)</label>
-              <textarea v-model="formAlat.keterangan" rows="2" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all resize-none"></textarea>
+              <textarea v-model="formAlat.keterangan" rows="2" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-none"></textarea>
             </div>
             <div class="pt-4 flex gap-3">
               <button type="button" @click="closeModal" class="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors">Batal</button>
-              <button type="submit" class="flex-1 px-4 py-2.5 bg-teal-600 text-white font-medium rounded-xl hover:bg-teal-700 transition-colors shadow-sm shadow-teal-200">Simpan Data</button>
+              <button type="submit" class="flex-1 px-4 py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors shadow-sm shadow-blue-200">Simpan Data</button>
             </div>
           </form>
         </div>

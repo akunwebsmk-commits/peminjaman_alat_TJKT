@@ -60,7 +60,7 @@ const submitForm = () => {
       
       <main class="flex-1 p-8 ml-64 overflow-y-auto">
         <div class="mb-8">
-          <button @click="router.back()" class="flex items-center gap-2 text-gray-500 hover:text-teal-600 transition-colors text-sm font-medium mb-4">
+          <button @click="router.back()" class="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors text-sm font-medium mb-4">
             <ArrowLeft class="w-4 h-4" /> Kembali
           </button>
           <h1 class="text-2xl font-bold text-gray-900">Form Pengembalian Alat</h1>
@@ -101,12 +101,12 @@ const submitForm = () => {
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-1">
                   <label class="text-sm font-medium text-gray-700">Tanggal Aktual Kembali</label>
-                  <input type="date" v-model="formPengembalian.tgl_kembali_aktual" required class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all">
+                  <input type="date" v-model="formPengembalian.tgl_kembali_aktual" required class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
                 </div>
 
                 <div class="space-y-1">
                   <label class="text-sm font-medium text-gray-700">Kondisi Alat Saat Kembali</label>
-                  <select v-model="formPengembalian.kondisi_alat" required class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all">
+                  <select v-model="formPengembalian.kondisi_alat" required class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
                     <option value="Baik">Baik</option>
                     <option value="Rusak Ringan">Rusak Ringan</option>
                     <option value="Rusak Berat">Rusak Berat</option>
@@ -139,7 +139,7 @@ const submitForm = () => {
                     <select 
                       v-model="formPengembalian.status_denda" 
                       :disabled="kalkulasi.totalDenda === 0"
-                      class="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:ring-1 focus:ring-teal-500 outline-none disabled:bg-gray-100"
+                      class="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:ring-1 focus:ring-blue-500 outline-none disabled:bg-gray-100"
                     >
                       <option value="Tidak Ada Denda">Tidak Ada Denda</option>
                       <option v-if="kalkulasi.totalDenda > 0" value="Belum Lunas">Belum Lunas</option>
@@ -150,7 +150,7 @@ const submitForm = () => {
               </div>
 
               <div class="pt-4 border-t border-gray-100 flex justify-end">
-                <button type="submit" class="bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg shadow-teal-200 transition-all flex items-center gap-2">
+                <button type="submit" class="bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-700 hover:to-sky-600 text-white font-semibold py-3 px-6 rounded-xl shadow-lg shadow-blue-200 transition-all flex items-center gap-2">
                   <CheckCircle2 class="w-5 h-5" /> Selesaikan Pengembalian
                 </button>
               </div>

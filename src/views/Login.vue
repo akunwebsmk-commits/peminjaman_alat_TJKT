@@ -17,7 +17,7 @@ const handleLogin = () => {
   <div class="min-h-screen bg-gray-50 flex items-center justify-center p-4">
     <div class="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden p-8">
       <div class="flex flex-col items-center text-center mb-8">
-        <div class="p-4 bg-teal-50 text-teal-600 rounded-full mb-4">
+        <div class="p-4 bg-blue-50 text-blue-600 rounded-full mb-4">
           <Wrench class="w-10 h-10" />
         </div>
         <h2 class="text-2xl font-bold text-gray-900">Admin Lab TKJ</h2>
@@ -31,7 +31,7 @@ const handleLogin = () => {
             type="text" 
             v-model="username" 
             required 
-            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
             placeholder="Masukkan username"
           >
         </div>
@@ -42,13 +42,13 @@ const handleLogin = () => {
             type="password" 
             v-model="password" 
             required 
-            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
             placeholder="••••••••"
           >
         </div>
 
         <div class="pt-2">
-          <button type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-teal-200 transition-all active:scale-[0.98]">
+          <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-700 hover:to-sky-600 text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-[0.98]">
             Masuk
           </button>
         </div>

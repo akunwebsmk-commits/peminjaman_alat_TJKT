@@ -82,9 +82,9 @@ const filteredPeminjaman = computed(() => {
           <div class="p-5 border-b border-gray-100 flex flex-col md:flex-row gap-4 justify-between items-center bg-gray-50/50">
             <div class="relative w-full md:w-96">
               <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input type="text" v-model="searchQuery" placeholder="Cari Nama Siswa atau Kelas..." class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all">
+              <input type="text" v-model="searchQuery" placeholder="Cari Nama Siswa atau Kelas..." class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
             </div>
-            <select v-model="filterStatus" class="w-full md:w-48 border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all text-gray-700">
+            <select v-model="filterStatus" class="w-full md:w-48 border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-gray-700">
               <option value="">Semua Status</option>
               <option value="Dipinjam">Dipinjam</option>
               <option value="Terlambat">Terlambat</option>
@@ -112,7 +112,7 @@ const filteredPeminjaman = computed(() => {
                   <td class="py-4 px-6">
                     <ul class="text-sm text-gray-700 space-y-1">
                       <li v-for="(detail, i) in pinjam.detail_peminjaman" :key="i" class="flex items-center gap-2">
-                        <span class="w-1.5 h-1.5 rounded-full bg-teal-400"></span>
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
                         {{ detail.jumlah_pinjam }}x {{ detail.alat.nama }}
                       </li>
                     </ul>
@@ -134,7 +134,7 @@ const filteredPeminjaman = computed(() => {
                   </td>
                   <td class="py-4 px-6">
                     <div class="flex items-center justify-end gap-2">
-                      <router-link v-if="pinjam.status !== 'Dikembalikan'" :to="`/pengembalian/${pinjam.id}`" class="text-sm font-medium text-teal-600 bg-teal-50 hover:bg-teal-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">
+                      <router-link v-if="pinjam.status !== 'Dikembalikan'" :to="`/pengembalian/${pinjam.id}`" class="text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">
                         <ExternalLink class="w-4 h-4" /> Kembalikan
                       </router-link>
                       <span v-else class="text-sm text-gray-400 italic">Selesai</span>

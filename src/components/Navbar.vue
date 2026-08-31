@@ -20,7 +20,7 @@ import { Bell, Search } from 'lucide-vue-next'
       </button>
       
       <div class="flex items-center gap-3 border-l border-gray-200 pl-4 ml-2">
-        <div class="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center text-teal-700 font-bold text-sm">
+        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-bold text-sm">
           A
         </div>
         <div class="hidden md:block">
