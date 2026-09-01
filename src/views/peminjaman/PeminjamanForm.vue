@@ -117,11 +117,17 @@ const submitForm = async () => {
   if (!form.value.id_siswa) {
     return addToast('Pilih Nama Siswa terlebih dahulu.', 'warning')
   }
+  if (!form.value.no_telp_aktual || form.value.no_telp_aktual.trim() === '') {
+    return addToast('No. WhatsApp wajib diisi.', 'warning')
+  }
   if (!form.value.id_petugas) {
     return addToast('Pilih Petugas Jaga terlebih dahulu.', 'warning')
   }
   if (!form.value.tgl_batas_kembali) {
     return addToast('Pilih Tanggal Rencana Kembali.', 'warning')
+  }
+  if (form.value.tgl_batas_kembali < todayDate) {
+    return addToast('Tanggal Rencana Kembali tidak boleh di masa lalu.', 'warning')
   }
   if (form.value.items.length === 0) {
     return addToast('Harap tambahkan minimal satu alat untuk dipinjam.', 'warning')
@@ -281,7 +287,7 @@ const submitForm = async () => {
           <div class="space-y-1">
             <label class="text-sm font-medium text-gray-700">Tanggal Rencana Kembali</label>
             <div class="relative cursor-pointer" @click="openDatePicker">
-              <input type="date" ref="dateInputRef" v-model="form.tgl_batas_kembali" class="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all cursor-pointer bg-white appearance-none">
+              <input type="date" ref="dateInputRef" v-model="form.tgl_batas_kembali" :min="todayDate" class="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all cursor-pointer bg-white appearance-none">
               <Calendar class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-500 pointer-events-none" />
             </div>
           </div>
