@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { Plus, Trash2, Wrench, AlertCircle, Calendar } from 'lucide-vue-next'
+import { Plus, Trash2, Wrench, AlertCircle, Calendar, MessageCircle } from 'lucide-vue-next'
 import Sidebar from '../../components/Sidebar.vue'
 import Navbar from '../../components/Navbar.vue'
 import { supabase } from '../../supabase'
@@ -354,5 +354,18 @@ const submitForm = async () => {
         </form>
       </div>
     </div>
+
+    <!-- Floating Chat Toolman Button -->
+    <a 
+      href="https://wa.me/6289525779548" 
+      target="_blank" 
+      rel="noopener noreferrer" 
+      class="fixed bottom-6 right-6 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-2xl hover:shadow-green-500/50 transition-all duration-300 flex items-center justify-center group z-50 hover:-translate-y-1"
+    >
+      <MessageCircle class="w-6 h-6" />
+      <span class="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 ease-in-out whitespace-nowrap opacity-0 group-hover:opacity-100 group-hover:ml-2 font-medium">
+        Chat Toolman
+      </span>
+    </a>
   </div>
 </template>
